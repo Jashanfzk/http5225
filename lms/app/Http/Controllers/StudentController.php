@@ -6,6 +6,7 @@ use App\Models\Student;
 use App\Http\Requests\StoreStudentRequest;
 use App\Http\Requests\UpdateStudentRequest;
 use Illuminate\Support\Facades\Session;
+use App\Models\Course;
 
 class StudentController extends Controller
 {
@@ -23,7 +24,8 @@ class StudentController extends Controller
      */
     public function create()
     {
-        return view('students.create');
+        $courses = Course::all();
+        return view('students.create', compact('courses'));
     }
 
     /**
@@ -32,7 +34,13 @@ class StudentController extends Controller
     public function store(StoreStudentRequest $request)
     {
         try {
-            Student::create($request->validated());
+            $student = Student::create($request->validated());
+            
+            // Attach courses if selected
+            if ($request->has('courses') && is_array($request->courses)) {
+                $student->courses()->attach($request->courses);
+            }
+            
             Session::flash('success', 'Student added successfully');
             return redirect()->route('students.index');
         } catch (\Exception $e) {

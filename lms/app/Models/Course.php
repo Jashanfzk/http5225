@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Course extends Model
@@ -17,6 +18,7 @@ class Course extends Model
     protected $fillable = [
         'name',
         'description',
+        'professor_id',
     ];
 
     public function students(): BelongsToMany
@@ -24,8 +26,8 @@ class Course extends Model
         return $this->belongsToMany(Student::class);
     }
 
-    public function professors(): BelongsToMany
+    public function professor(): BelongsTo
     {
-        return $this->belongsToMany(Professor::class);
+        return $this->belongsTo(Professor::class);
     }
 }

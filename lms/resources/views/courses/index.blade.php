@@ -19,6 +19,7 @@
                             <th>ID</th>
                             <th>Name</th>
                             <th>Description</th>
+                            <th>Professor</th>
                             <th>Created</th>
                             <th>Actions</th>
                         </tr>
@@ -29,6 +30,13 @@
                             <td>{{ $course->id }}</td>
                             <td>{{ $course->name }}</td>
                             <td>{{ Str::limit($course->description, 100) }}</td>
+                            <td>
+                                @if($course->professor)
+                                    {{ $course->professor->name }}
+                                @else
+                                    <span class="text-muted">Not assigned</span>
+                                @endif
+                            </td>
                             <td>{{ $course->created_at->format('M d, Y') }}</td>
                             <td>
                                 <div class="btn-group" role="group">

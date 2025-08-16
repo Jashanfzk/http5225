@@ -45,6 +45,24 @@
             </div>
 
             <div class="mb-3">
+                <label for="professor_id" class="form-label">Assign Professor</label>
+                <select name="professor_id" id="professor_id" class="form-control @error('professor_id') is-invalid @enderror">
+                    <option value="">Select a Professor</option>
+                    @foreach (App\Models\Professor::all() as $professor)
+                        <option value="{{ $professor->id }}" {{ old('professor_id', $course->professor_id) == $professor->id ? 'selected' : '' }}>
+                            {{ $professor->name }}
+                        </option>
+                    @endforeach
+                </select>
+                <small class="form-text text-muted">Optional: You can assign a professor later</small>
+                @error('professor_id')
+                    <span class="invalid-feedback" role="alert">
+                        <strong>{{ $message }}</strong>
+                    </span>
+                @enderror
+            </div>
+
+            <div class="mb-3">
                 <button type="submit" class="btn btn-primary">Update Course</button>
                 <a href="{{ route('courses.index') }}" class="btn btn-secondary">Cancel</a>
             </div>

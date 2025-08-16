@@ -19,6 +19,13 @@
             <div class="card-body">
                 <h6 class="card-subtitle mb-2 text-muted">Course ID: {{ $course->id }}</h6>
                 <p class="card-text">{{ $course->description }}</p>
+                
+                @if($course->professor)
+                    <p class="card-text"><strong>Professor:</strong> {{ $course->professor->name }}</p>
+                @else
+                    <p class="card-text"><strong>Professor:</strong> <span class="text-muted">Not assigned</span></p>
+                @endif
+                
                 <p class="card-text"><small class="text-muted">Created: {{ $course->created_at->format('F d, Y \a\t g:i A') }}</small></p>
                 <p class="card-text"><small class="text-muted">Last updated: {{ $course->updated_at->format('F d, Y \a\t g:i A') }}</small></p>
             </div>

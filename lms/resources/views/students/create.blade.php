@@ -54,6 +54,23 @@
             </div>
 
             <div class="mb-3">
+                <label for="courses" class="form-label">Select Courses</label>
+                <select name="courses[]" id="courses" class="form-control @error('courses') is-invalid @enderror" multiple>
+                    @foreach ($courses as $course)
+                        <option value="{{ $course->id }}" {{ in_array($course->id, old('courses', [])) ? 'selected' : '' }}>
+                            {{ $course->name }}
+                        </option>
+                    @endforeach
+                </select>
+                <small class="form-text text-muted">Hold Ctrl (or Cmd on Mac) to select multiple courses</small>
+                @error('courses')
+                    <span class="invalid-feedback" role="alert">
+                        <strong>{{ $message }}</strong>
+                    </span>
+                @enderror
+            </div>
+
+            <div class="mb-3">
                 <button type="submit" class="btn btn-primary">Add Student</button>
                 <a href="{{ route('students.index') }}" class="btn btn-secondary">Cancel</a>
             </div>
