@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class Student extends Model
+class Professor extends Model
 {
     use HasFactory;
     use SoftDeletes;
@@ -15,9 +15,7 @@ class Student extends Model
     protected $dates = ['deleted_at'];
 
     protected $fillable = [
-       'fname',
-       'lname',
-       'email',
+        'name',
     ];
 
     public function courses(): BelongsToMany

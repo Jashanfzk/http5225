@@ -14,9 +14,8 @@ class StudentController extends Controller
      */
     public function index()
     {
-        return view('students.index',[
-          'students' => student::all()
-        ]);
+        $students = Student::all();
+        return view('students.index', compact('students'));
     }
 
     /**
@@ -32,8 +31,14 @@ class StudentController extends Controller
      */
     public function store(StoreStudentRequest $request)
     {
-       student::create($request -> validated());
-       return redirect() -> route('students.index');
+        try {
+            Student::create($request->validated());
+            Session::flash('success', 'Student added successfully');
+            return redirect()->route('students.index');
+        } catch (\Exception $e) {
+            Session::flash('error', 'Failed to create student. Please try again.');
+            return redirect()->back()->withInput();
+        }
     }
 
     /**
@@ -41,7 +46,7 @@ class StudentController extends Controller
      */
     public function show(Student $student)
     {
-        //
+        return view('students.show', compact('student'));
     }
 
     /**
@@ -52,42 +57,98 @@ class StudentController extends Controller
         return view('students.edit', compact('student'));
     }
 
-    
-
     /**
      * Update the specified resource in storage.
      */
     public function update(UpdateStudentRequest $request, Student $student)
     {
-        $student->update($request->validated());
-        Session::flash('success', 'Student updated successfully');
-        return redirect()->route('students.index');
+        try {
+            $student->update($request->validated());
+            Session::flash('success', 'Student updated successfully');
+            return redirect()->route('students.index');
+        } catch (\Exception $e) {
+            Session::flash('error', 'Failed to update student. Please try again.');
+            return redirect()->back()->withInput();
+        }
     }
+
     /**
      * Remove the specified resource from storage.
      */
-         public function trash($id)
+    public function destroy(Student $student)
     {
-        Student::Destroy($id);
-        Session::Flash('success', 'Student trashed successfully');
-        return redirect() -> route('students.index');
+        try {
+            $student->delete();
+            Session::flash('success', 'Student deleted successfully');
+            return redirect()->route('students.index');
+        } catch (\Exception $e) {
+            Session::flash('error', 'Failed to delete student. Please try again.');
+            return redirect()->back();
+        }
     }
 
-    public function destroy($id)
+    /**
+     * Soft delete a student
+     */
+    public function trash($id)
     {
-        $student = Student::withTrashed() -> where('id', $id) -> first();
-        $student -> forceDelete();
-        Session::Flash('success', 'Student deleted successfully');
-        return redirect() -> route('students.index');
+        try {
+            $student = Student::findOrFail($id);
+            $student->delete();
+            Session::flash('success', 'Student trashed successfully');
+            return redirect()->route('students.index');
+        } catch (\Exception $e) {
+            Session::flash('error', 'Failed to trash student. Please try again.');
+            return redirect()->back();
+        }
     }
 
+    /**
+     * Permanently delete a student
+     */
+    public function forceDelete($id)
+    {
+        try {
+            $student = Student::withTrashed()->where('id', $id)->first();
+            if ($student) {
+                $student->forceDelete();
+                Session::flash('success', 'Student permanently deleted');
+            } else {
+                Session::flash('error', 'Student not found');
+            }
+            return redirect()->route('students.index');
+        } catch (\Exception $e) {
+            Session::flash('error', 'Failed to delete student. Please try again.');
+            return redirect()->back();
+        }
+    }
+
+    /**
+     * Restore a soft deleted student
+     */
     public function restore($id)
     {
-        $student = Student::withTrashed() -> where('id', $id) -> first();
-        $student -> restore();
-        Session::Flash('success', 'Student restored successfully');
-        return redirect() -> route('students.trashed');
+        try {
+            $student = Student::withTrashed()->where('id', $id)->first();
+            if ($student) {
+                $student->restore();
+                Session::flash('success', 'Student restored successfully');
+            } else {
+                Session::flash('error', 'Student not found');
+            }
+            return redirect()->route('students.index');
+        } catch (\Exception $e) {
+            Session::flash('error', 'Failed to restore student. Please try again.');
+            return redirect()->back();
+        }
     }
 
-
+    /**
+     * Show trashed students
+     */
+    public function trashed()
+    {
+        $students = Student::onlyTrashed()->get();
+        return view('students.trashed', compact('students'));
+    }
 }

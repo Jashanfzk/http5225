@@ -1,28 +1,63 @@
-@extends('admin');
+@extends('admin')
 @section('content')
-<h1>Add a Student</h1>
+<div class="row">
+    <div class="col">
+        <h1 class="display-4">Add a Student Profile</h1>
+    </div>
+</div>
 
-<form action="{{ route('students.store') }}" method="POST">
-    @if ($errors->any())
-        <div>
-            <ul>
-                @foreach ($errors->all() as $error)
-                    <li> {{$error}}</li>
-                @endforeach
-            </ul>
-        </div>
-    @endif
+<div class="row">
+    <div class="col-md-8">
+        <form action="{{ route('students.store') }}" method="POST">
+            @if ($errors->any())
+                <div class="alert alert-danger">
+                    <ul class="mb-0">
+                        @foreach ($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
 
-    {{ csrf_field() }}
-    <input type="text" name="fname" placeholder="First Name">
+            @csrf
+            <div class="mb-3">
+                <label for="fname" class="form-label">First Name</label>
+                <input type="text" name="fname" class="form-control @error('fname') is-invalid @enderror"
+                    placeholder="First Name" value="{{ old('fname') }}">
+                @error('fname')
+                    <span class="invalid-feedback" role="alert">
+                        <strong>{{ $message }}</strong>
+                    </span>
+                @enderror
+            </div>
 
-    <input type="text" name="lname" placeholder="Last Name">
+            <div class="mb-3">
+                <label for="lname" class="form-label">Last Name</label>
+                <input type="text" name="lname" class="form-control @error('lname') is-invalid @enderror"
+                    placeholder="Last Name" value="{{ old('lname') }}">
+                @error('lname')
+                    <span class="invalid-feedback" role="alert">
+                        <strong>{{ $message }}</strong>
+                    </span>
+                @enderror
+            </div>
 
-    <input type="email" name="email" placeholder="Email">
-    @error('email')
-        <span>
-            <strong>{{ $message }}</strong>
-        </span>
-    @enderror
-    <input type="submit" name="Add" value="Add">
-</form>
+            <div class="mb-3">
+                <label for="email" class="form-label">Email</label>
+                <input type="email" name="email" class="form-control @error('email') is-invalid @enderror"
+                    placeholder="Email" value="{{ old('email') }}">
+                @error('email')
+                    <span class="invalid-feedback" role="alert">
+                        <strong>{{ $message }}</strong>
+                    </span>
+                @enderror
+            </div>
+
+            <div class="mb-3">
+                <button type="submit" class="btn btn-primary">Add Student</button>
+                <a href="{{ route('students.index') }}" class="btn btn-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+@endsection
