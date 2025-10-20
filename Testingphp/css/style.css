@@ -1,0 +1,401 @@
+/* General Styling */
+@import url('https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap');
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* Smooth Scrolling */
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    font-family: 'Lato', sans-serif;
+    font-size: 16px;
+    font-weight: 400;
+    color: #302e22;
+    background: #ffffff;
+    cursor: default;
+    text-align: center;
+}
+
+/* Header */
+header {
+    background-color: #fff;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* Logo */
+.logo img {
+    width: 80px;
+}
+
+/* Navigation */
+nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 10px;
+}
+
+.nav-links {
+    list-style: none;
+    display: flex;
+    gap: 20px;
+}
+
+.nav-links li a {
+    text-decoration: none;
+    font-size: 16px;
+    font-weight: 600;
+    color: #ff5b00;
+    transition: color 0.3s;
+}
+
+.nav-links li a:hover {
+    color: #ea5302;
+}
+
+/* Hero Section */
+#hero {
+    padding: 50px 20px;
+    text-align: center;
+}
+
+h1 {
+    font-size: 44px;
+    color: #ff5b00;
+}
+
+p {
+    font-size: 18px;
+    margin-top: 10px;
+}
+
+/* Search Container */
+.search-container {
+    margin-top: 30px;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.search-box {
+    position: relative;
+    display: flex;
+    align-items: center;
+    background: #f8f9fa;
+    border: 2px solid #e9ecef;
+    border-radius: 25px;
+    padding: 12px 20px;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.search-box:focus-within {
+    border-color: #ff5b00;
+    box-shadow: 0 2px 20px rgba(255, 91, 0, 0.2);
+}
+
+.search-icon {
+    color: #6c757d;
+    margin-right: 10px;
+    font-size: 16px;
+}
+
+#search-input {
+    flex: 1;
+    border: none;
+    background: transparent;
+    font-size: 16px;
+    color: #333;
+    outline: none;
+}
+
+#search-input::placeholder {
+    color: #6c757d;
+}
+
+.clear-btn {
+    background: none;
+    border: none;
+    color: #6c757d;
+    cursor: pointer;
+    padding: 5px;
+    border-radius: 50%;
+    transition: color 0.3s ease;
+}
+
+.clear-btn:hover {
+    color: #ff5b00;
+}
+
+/* Search Filters */
+.search-filters {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    margin-top: 15px;
+    flex-wrap: wrap;
+}
+
+.search-filters label {
+    display: flex;
+    align-items: center;
+    font-size: 14px;
+    color: #666;
+    cursor: pointer;
+    transition: color 0.3s ease;
+}
+
+.search-filters label:hover {
+    color: #ff5b00;
+}
+
+.search-filters input[type="checkbox"] {
+    margin-right: 8px;
+    accent-color: #ff5b00;
+}
+
+/* Main Section */
+main {
+    padding: 30px 5%;
+}
+
+/* Applications Section */
+#applications {
+    padding: 20px;
+}
+
+.applications-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+    justify-content: center;
+}
+
+/* Application Cards */
+.app-card {
+    background-color: #fbeae1;
+    padding: 20px;
+    border-radius: 10px;
+    text-align: center;
+    transition: transform 0.3s ease;
+}
+
+.app-card:hover {
+    transform: translateY(-5px);
+}
+
+.card-title {
+    text-transform: uppercase;
+    font-weight: 600;
+    font-size: 20px;
+}
+
+.card-buttons-container {
+    margin-top: 10px;
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+}
+
+/* Buttons */
+button {
+    font-weight: 600;
+    padding: 10px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.button-app-info {
+    background-color: #ff5b00;
+    color: white;
+    border: none;
+}
+
+.button-app-info:hover {
+    background-color: #ea5302;
+}
+
+.button-app-github {
+    background-color: #ff0000;
+    color: white;
+    border: none;
+}
+
+.button-app-github:hover {
+    background-color: #b80000;
+}
+
+/* Footer */
+footer {
+    background-color: #fff;
+    padding: 20px;
+    text-align: center;
+    font-size: 14px;
+    color: #666;
+    margin-top: 30px;
+}
+
+/* Social Icons */
+.social-icons {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    margin-bottom: 10px;
+}
+
+.social-icons a {
+    text-decoration: none;
+    font-size: 20px;
+    transition: transform 0.3s ease;
+}
+
+.social-icons a:hover {
+    transform: scale(1.2);
+}
+
+.fa-brands, .fab {
+    font-size: 22px;
+}
+
+.fa-instagram {
+    color: rgb(218, 119, 135);
+}
+
+.fa-youtube {
+    color: red;
+}
+
+.fa-twitter {
+    color: black;
+}
+
+.fa-github {
+    color: black;
+}
+
+.fa-tiktok {
+    color: black;
+}
+
+/* Pagination Container */
+#pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 15px;
+    margin-top: 20px;
+    font-size: 18px;
+    font-weight: bold;
+}
+
+.pagination-btn {
+    background-color: #ff5b00;
+    color: white;
+    padding: 10px 15px;
+    margin: 5px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background 0.3s ease, transform 0.2s;
+}
+
+.pagination-btn:hover {
+    background-color: #ea5302;
+    transform: scale(1.1);
+}
+
+.page-indicator {
+    font-size: 18px;
+    font-weight: bold;
+    color: #333;
+}
+
+/* Responsive Styles */
+@media (max-width: 1024px) {
+    nav {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .nav-links {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .search-container {
+        max-width: 500px;
+    }
+
+    .applications-container {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    h1 {
+        font-size: 36px;
+    }
+}
+
+@media (max-width: 768px) {
+    .applications-container {
+        grid-template-columns: repeat(1, 1fr);
+    }
+
+    h1 {
+        font-size: 28px;
+    }
+
+    p {
+        font-size: 16px;
+    }
+
+    .search-filters {
+        gap: 15px;
+    }
+    .search-container {
+        max-width: 400px;
+    }
+
+    .social-icons a {
+        font-size: 18px;
+    }
+}
+
+@media (max-width: 480px) {
+    h1 {
+        font-size: 24px;
+    }
+
+    p {
+        font-size: 14px;
+    }
+
+    .search-filters {
+        flex-direction: column;
+        gap: 10px;
+    }
+    .search-box {
+        padding: 10px 15px;
+    }
+    .search-container {
+        max-width: 100%;
+        padding: 0 10px;
+    }
+
+    .button-app-info, .button-app-github {
+        width: 100%;
+    }
+}
