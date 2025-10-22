@@ -153,339 +153,498 @@ try {
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
     <title>Personal History - BrickMMO Timesheets</title>
     <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
-    <link rel="stylesheet" href="css/w3-theme.css">
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet"/>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
         body {
-            font-family: 'Roboto', sans-serif;
+            font-family: 'Inter', sans-serif;
+            background: #FAF8F7;
+            color: #1A1A1A;
+        }
+        
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 0 1rem;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1.5rem;
+        }
+        
+        .stat-card {
+            background: #FFF5F3;
+            border-radius: 8px;
+            padding: 1.5rem;
+            border: 1px solid #E8D5CF;
+        }
+        
+        .stat-card h4 {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #666;
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .stat-card p {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #DD5A3A;
+        }
+        
+        .stat-card p.small-text {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #1A1A1A;
+        }
+        
+        .filters-form {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+        
+        .form-group label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #666;
+            margin-bottom: 0.5rem;
+        }
+        
+        .form-group select,
+        .form-group input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #E8D5CF;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            font-family: 'Inter', sans-serif;
+            background: white;
+        }
+        
+        .form-group select:focus,
+        .form-group input:focus {
+            outline: none;
+            border-color: #DD5A3A;
+        }
+        
+        .btn-primary {
+            background: #DD5A3A;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: background 0.2s;
+            font-family: 'Inter', sans-serif;
+            width: 100%;
+        }
+        
+        .btn-primary:hover {
+            background: #C14D30;
+        }
+        
+        .entry-item {
+            background: #FFF5F3;
+            border: 1px solid #E8D5CF;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 1.5rem;
+        }
+        
+        .entry-content {
+            flex: 1;
+        }
+        
+        .entry-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 0.5rem;
+            flex-wrap: wrap;
+        }
+        
+        .entry-title {
+            font-weight: 600;
+            color: #DD5A3A;
+            font-size: 1.1rem;
+        }
+        
+        .entry-date {
+            font-size: 0.875rem;
+            color: #666;
+        }
+        
+        .entry-description {
+            color: #444;
+            margin: 0.5rem 0;
+            line-height: 1.5;
+        }
+        
+        .entry-meta {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            font-size: 0.75rem;
+            color: #999;
+            margin-top: 0.5rem;
+        }
+        
+        .entry-meta .material-icons {
+            font-size: 14px;
+            vertical-align: middle;
+            margin-right: 4px;
+        }
+        
+        .entry-hours {
+            text-align: right;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        
+        .hours-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #DD5A3A;
+        }
+        
+        .repo-link {
+            font-size: 0.75rem;
+            color: #666;
+            text-decoration: none;
+        }
+        
+        .repo-link:hover {
+            color: #DD5A3A;
+        }
+        
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 0.5rem;
+            margin-top: 2rem;
+        }
+        
+        .pagination a,
+        .pagination span {
+            padding: 0.5rem 1rem;
+            border: 1px solid #E8D5CF;
+            border-radius: 6px;
+            text-decoration: none;
+            color: #1A1A1A;
+            font-weight: 500;
+        }
+        
+        .pagination a:hover {
+            background: #FFF5F3;
+            border-color: #DD5A3A;
+        }
+        
+        .pagination .active {
+            background: #DD5A3A;
+            color: white;
+            border-color: #DD5A3A;
+        }
+        
+        .pagination .disabled {
+            color: #CCC;
+            cursor: not-allowed;
+        }
+        
+        .alert {
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+        }
+        
+        .alert-error {
+            background: #FEE;
+            border: 1px solid #FCC;
+            color: #C00;
+        }
+        
+        .alert-success {
+            background: #EFE;
+            border: 1px solid #CFC;
+            color: #060;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+        }
+        
+        .empty-state .material-icons {
+            font-size: 4rem;
+            color: #CCC;
+            margin-bottom: 1rem;
+        }
+        
+        .empty-state h3 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+        
+        .empty-state p {
+            color: #666;
+            margin-bottom: 1.5rem;
+        }
+        
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin-top: 1.5rem;
         }
     </style>
 </head>
-<body class="w3-light-grey">
-    <div id="app">
-        <header class="brickmmo-nav w3-bar w3-white w3-padding">
-            <div class="w3-content w3-display-container">
-                <div class="w3-bar-item w3-left">
-                    <span class="w3-xxlarge w3-text-theme w3-bold">BrickMMO</span>
-                </div>
-                <nav class="w3-bar w3-right">
-                    <a class="w3-bar-item w3-button w3-hover-theme" href="index.php">Home</a>
-                    <a class="w3-bar-item w3-button w3-hover-theme" href="dashboard.php">Dashboard</a>
-                    <a class="w3-bar-item w3-button w3-hover-theme" href="auth/logout.php">Logout</a>
-                    <button class="w3-bar-item w3-button w3-hover-theme" id="theme-toggle">
-                        <span class="material-icons">brightness_6</span>
-                    </button>
-                </nav>
+<body>
+    <!-- Navigation Header -->
+    <header style="background: white; border-bottom: 1px solid #E8D5CF; padding: 1.5rem 0; margin-bottom: 2rem;">
+        <div style="max-width: 1600px; margin: 0 auto; padding: 0 1rem; display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <a href="index.php">
+                    <img src="./assets/BrickMMO_Logo_Coloured.png" alt="BrickMMO" style="height: 48px;">
+                </a>
             </div>
-        </header>
+            <nav style="display: flex; gap: 2rem; align-items: center;">
+                <a href="<?= BASE_URL ?>" style="color: #DD5A3A; text-decoration: none; font-weight: 600; font-size: 0.95rem;">Home</a>
+                <a href="<?= BASE_URL ?>dashboard.php" style="color: #DD5A3A; text-decoration: none; font-weight: 600; font-size: 0.95rem;">Dashboard</a>
+                <a href="<?= BASE_URL ?>personal-history.php" style="color: #DD5A3A; text-decoration: none; font-weight: 600; font-size: 0.95rem;">My History</a>
+                <a href="https://brickmmo.com" style="color: #DD5A3A; text-decoration: none; font-weight: 600; font-size: 0.95rem;">BrickMMO Main Site</a>
+                <a href="<?= BASE_URL ?>auth/logout.php" style="color: #DD5A3A; text-decoration: none; font-weight: 600; font-size: 0.95rem;">Logout</a>
+            </nav>
+        </div>
+    </header>
+    
+    <div class="container">
+        <div style="margin-bottom: 2rem;">
+            <h1 style="font-size: 2.5rem; font-weight: 700; color: #1A1A1A; margin-bottom: 0.5rem;">Personal History</h1>
+            <p style="font-size: 1.1rem; color: #666;">View your logged hours and contributions.</p>
+        </div>
         
-        <main class="w3-content w3-padding-large">
-            <div class="w3-margin-bottom">
-                <h1 class="w3-xxxlarge w3-text-theme w3-bold w3-margin-bottom">Personal History</h1>
-                <p class="w3-text-grey">View your logged hours and contributions.</p>
+        <!-- Error Message -->
+        <?php if (!empty($error_message)): ?>
+            <div class="alert alert-error">
+                <strong>Error:</strong> <?= htmlspecialchars($error_message) ?>
+                <br><small>Please check your database connection and try again.</small>
             </div>
-            
-            <!-- Error Message -->
-            <?php if (!empty($error_message)): ?>
-                <div class="w3-panel w3-red w3-padding w3-round w3-margin-bottom">
-                    <strong>Error:</strong> <?= htmlspecialchars($error_message) ?>
-                    <br><small>Please check your database connection and try again.</small>
+        <?php endif; ?>
+        
+        <!-- Success Message -->
+        <?php if (!empty($success_message)): ?>
+            <div class="alert alert-success">
+                <?= htmlspecialchars($success_message) ?>
+            </div>
+        <?php endif; ?>
+        
+        <!-- Summary Statistics -->
+        <div class="card">
+            <h2 style="font-size: 1.5rem; font-weight: 700; margin-bottom: 1rem;">Summary Statistics</h2>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h4>Total Hours</h4>
+                    <p><?= number_format($summary_stats['total_hours'] ?? 0, 1) ?></p>
                 </div>
-            <?php endif; ?>
-            
-            <!-- Success Message -->
-            <?php if (!empty($success_message)): ?>
-                <div class="w3-panel w3-green w3-padding w3-round w3-margin-bottom">
-                    <?= htmlspecialchars($success_message) ?>
+                <div class="stat-card">
+                    <h4>Total Entries</h4>
+                    <p><?= $summary_stats['total_entries'] ?? 0 ?></p>
                 </div>
-            <?php endif; ?>
-            
-            <!-- Summary Statistics -->
-            <div class="brickmmo-card w3-card w3-white w3-padding w3-margin-bottom">
-                <h2 class="w3-large w3-bold w3-margin-bottom">Summary Statistics</h2>
-                <div class="brickmmo-stats-grid">
-                    <div class="brickmmo-stats-item">
-                        <h4>Total Hours</h4>
-                        <p><?= number_format($summary_stats['total_hours'] ?? 0, 1) ?></p>
-                    </div>
-                    <div class="brickmmo-stats-item">
-                        <h4>Total Entries</h4>
-                        <p><?= $summary_stats['total_entries'] ?? 0 ?></p>
-                    </div>
-                    <div class="brickmmo-stats-item">
-                        <h4>Projects</h4>
-                        <p><?= $summary_stats['projects_worked_on'] ?? 0 ?></p>
-                    </div>
-                    <div class="brickmmo-stats-item">
-                        <h4>Avg per Entry</h4>
-                        <p><?= number_format($summary_stats['avg_hours_per_entry'] ?? 0, 1) ?></p>
-                    </div>
-                    <div class="brickmmo-stats-item">
-                        <h4>First Entry</h4>
-                        <p class="w3-small">
-                            <?= $summary_stats['first_entry'] ? date('M j, Y', strtotime($summary_stats['first_entry'])) : 'N/A' ?>
-                        </p>
-                    </div>
+                <div class="stat-card">
+                    <h4>Projects</h4>
+                    <p><?= $summary_stats['projects_worked_on'] ?? 0 ?></p>
+                </div>
+                <div class="stat-card">
+                    <h4>Avg per Entry</h4>
+                    <p><?= number_format($summary_stats['avg_hours_per_entry'] ?? 0, 1) ?></p>
+                </div>
+                <div class="stat-card">
+                    <h4>First Entry</h4>
+                    <p class="small-text">
+                        <?= $summary_stats['first_entry'] ? date('M j, Y', strtotime($summary_stats['first_entry'])) : 'N/A' ?>
+                    </p>
                 </div>
             </div>
-            
-            <!-- Monthly Chart -->
-            <?php if (!empty($monthly_data)): ?>
-                <div class="bg-card-light dark:bg-card-dark p-4 rounded-lg shadow-md mb-6">
-                    <h2 class="text-lg font-bold mb-3">Monthly Activity (<?= date('Y') ?>)</h2>
-                    <div style="height: 200px; position: relative;">
-                        <canvas id="monthlyChart"></canvas>
-                    </div>
-                </div>
-            <?php endif; ?>
-            
-            <!-- Filters -->
-            <div class="bg-card-light dark:bg-card-dark p-4 rounded-lg shadow-md mb-6">
-                <h2 class="text-lg font-bold mb-3">Filters</h2>
-                <form method="GET" class="grid grid-cols-1 md:grid-cols-4 gap-3">
-                    <div>
-                        <label class="block text-sm font-medium text-subtext-light dark:text-subtext-dark mb-1" for="app">Repository</label>
-                        <select class="w-full pl-3 pr-10 py-2 text-base border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm rounded-md" 
-                                id="app" name="app">
-                            <option value="">All Repositories</option>
-                            <?php foreach ($applications as $app): ?>
-                                <option value="<?= $app['id'] ?>" <?= $app_filter == $app['id'] ? 'selected' : '' ?>>
-                                    <?= htmlspecialchars($app['name']) ?>
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-                    
-                    <div>
-                        <label class="block text-sm font-medium text-subtext-light dark:text-subtext-dark mb-1" for="date_from">From Date</label>
-                        <input class="w-full py-2 px-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 focus:outline-none focus:ring-primary focus:border-primary rounded-md" 
-                               id="date_from" name="date_from" type="date" value="<?= htmlspecialchars($date_from) ?>"/>
-                    </div>
-                    
-                    <div>
-                        <label class="block text-sm font-medium text-subtext-light dark:text-subtext-dark mb-1" for="date_to">To Date</label>
-                        <input class="w-full py-2 px-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 focus:outline-none focus:ring-primary focus:border-primary rounded-md" 
-                               id="date_to" name="date_to" type="date" value="<?= htmlspecialchars($date_to) ?>"/>
-                    </div>
-                    
-                    <div class="flex items-end">
-                        <button type="submit" class="w-full bg-primary hover:bg-red-700 text-white font-bold py-2 px-4 rounded transition-colors">
-                            Apply Filters
-                        </button>
-                    </div>
-                </form>
-            </div>
-            
-            <!-- Time Entries -->
-            <div class="bg-card-light dark:bg-card-dark p-4 rounded-lg shadow-md">
-                <div class="flex justify-between items-center mb-3">
-                    <h2 class="text-lg font-bold">Time Entries</h2>
-                    <span class="text-xs text-subtext-light dark:text-subtext-dark">
-                        Showing <?= count($time_entries) ?> of <?= $total_items ?> entries
-                    </span>
+        </div>
+        
+        <!-- Filters -->
+        <div class="card">
+            <h2 style="font-size: 1.5rem; font-weight: 700; margin-bottom: 1rem;">Filters</h2>
+            <form method="GET" class="filters-form">
+                <div class="form-group">
+                    <label for="app">Repository</label>
+                    <select id="app" name="app">
+                        <option value="">All Repositories</option>
+                        <?php foreach ($applications as $app): ?>
+                            <option value="<?= $app['id'] ?>" <?= $app_filter == $app['id'] ? 'selected' : '' ?>>
+                                <?= htmlspecialchars($app['name']) ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
                 </div>
                 
-                <?php if (!empty($time_entries)): ?>
-                    <div class="space-y-3">
-                        <?php foreach ($time_entries as $entry): ?>
-                            <div class="bg-background-light dark:bg-background-dark p-3 rounded-lg">
-                                <div class="flex justify-between items-start">
-                                    <div class="flex-1">
-                                        <div class="flex items-center mb-2">
-                                            <h3 class="font-medium text-primary mr-4"><?= htmlspecialchars($entry['app_name']) ?></h3>
-                                            <span class="text-sm text-subtext-light dark:text-subtext-dark">
-                                                <?= date('l, F j, Y', strtotime($entry['work_date'])) ?>
-                                            </span>
-                                        </div>
-                                        
-                                        <?php if ($entry['description']): ?>
-                                            <p class="text-sm text-subtext-light dark:text-subtext-dark mb-2">
-                                                <?= htmlspecialchars($entry['description']) ?>
-                                            </p>
-                                        <?php endif; ?>
-                                        
-                                        <div class="flex items-center text-xs text-subtext-light dark:text-subtext-dark">
-                                            <span class="material-icons text-xs mr-1">schedule</span>
-                                            <span>Logged <?= date('M j, Y g:i A', strtotime($entry['created_at'])) ?></span>
-                                            <?php if ($entry['updated_at'] != $entry['created_at']): ?>
-                                                <span class="ml-4">
-                                                    <span class="material-icons text-xs mr-1">edit</span>
-                                                    <span>Updated <?= date('M j, Y g:i A', strtotime($entry['updated_at'])) ?></span>
-                                                </span>
-                                            <?php endif; ?>
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="text-right ml-4">
-                                        <div class="text-2xl font-bold text-primary"><?= number_format($entry['duration'], 1) ?>h</div>
-                                        <a href="<?= htmlspecialchars($entry['app_url']) ?>" target="_blank" 
-                                           class="text-xs text-subtext-light dark:text-subtext-dark hover:text-primary">
-                                            View Repository
-                                        </a>
-                                    </div>
+                <div class="form-group">
+                    <label for="date_from">From Date</label>
+                    <input id="date_from" name="date_from" type="date" value="<?= htmlspecialchars($date_from) ?>"/>
+                </div>
+                
+                <div class="form-group">
+                    <label for="date_to">To Date</label>
+                    <input id="date_to" name="date_to" type="date" value="<?= htmlspecialchars($date_to) ?>"/>
+                </div>
+                
+                <div class="form-group" style="display: flex; align-items: flex-end;">
+                    <button type="submit" class="btn-primary">Apply Filters</button>
+                </div>
+            </form>
+        </div>
+        
+        <!-- Time Entries -->
+        <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                <h2 style="font-size: 1.5rem; font-weight: 700;">Time Entries</h2>
+                <span style="font-size: 0.875rem; color: #666;">
+                    Showing <?= count($time_entries) ?> of <?= $total_items ?? 0 ?> entries
+                </span>
+            </div>
+            
+            <?php if (!empty($time_entries)): ?>
+                <div>
+                    <?php foreach ($time_entries as $entry): ?>
+                        <div class="entry-item">
+                            <div class="entry-content">
+                                <div class="entry-header">
+                                    <h3 class="entry-title"><?= htmlspecialchars($entry['app_name']) ?></h3>
+                                    <span class="entry-date">
+                                        <?= date('l, F j, Y', strtotime($entry['work_date'])) ?>
+                                    </span>
+                                </div>
+                                
+                                <?php if ($entry['description']): ?>
+                                    <p class="entry-description">
+                                        <?= htmlspecialchars($entry['description']) ?>
+                                    </p>
+                                <?php endif; ?>
+                                
+                                <div class="entry-meta">
+                                    <span>
+                                        <span class="material-icons">schedule</span>
+                                        Logged <?= date('M j, Y g:i A', strtotime($entry['created_at'])) ?>
+                                    </span>
+                                    <?php if ($entry['updated_at'] != $entry['created_at']): ?>
+                                        <span>
+                                            <span class="material-icons">edit</span>
+                                            Updated <?= date('M j, Y g:i A', strtotime($entry['updated_at'])) ?>
+                                        </span>
+                                    <?php endif; ?>
                                 </div>
                             </div>
-                        <?php endforeach; ?>
-                    </div>
-                    
-                    <!-- Pagination -->
-                    <?php if ($total_pages > 1): ?>
-                        <div class="flex justify-center mt-8">
-                            <nav class="flex rounded-md shadow-sm">
-                                <?php if ($page > 1): ?>
-                                    <a class="px-4 py-2 text-sm font-medium text-subtext-light dark:text-subtext-dark bg-white dark:bg-card-dark rounded-l-md hover:bg-gray-50 dark:hover:bg-gray-700" 
-                                       href="?page=<?= $page - 1 ?><?= $app_filter ? '&app=' . $app_filter : '' ?><?= $date_from ? '&date_from=' . urlencode($date_from) : '' ?><?= $date_to ? '&date_to=' . urlencode($date_to) : '' ?>">Previous</a>
-                                <?php else: ?>
-                                    <span class="px-4 py-2 text-sm font-medium text-gray-400 bg-white dark:bg-card-dark rounded-l-md">Previous</span>
-                                <?php endif; ?>
-                                
-                                <?php 
-                                $start_page = max(1, $page - 2);
-                                $end_page = min($total_pages, $page + 2);
-                                ?>
-                                
-                                <?php for ($i = $start_page; $i <= $end_page; $i++): ?>
-                                    <?php if ($i == $page): ?>
-                                        <span class="px-4 py-2 text-sm font-medium text-white bg-primary z-10"><?= $i ?></span>
-                                    <?php else: ?>
-                                        <a class="px-4 py-2 text-sm font-medium text-subtext-light dark:text-subtext-dark bg-white dark:bg-card-dark hover:bg-gray-50 dark:hover:bg-gray-700" 
-                                           href="?page=<?= $i ?><?= $app_filter ? '&app=' . $app_filter : '' ?><?= $date_from ? '&date_from=' . urlencode($date_from) : '' ?><?= $date_to ? '&date_to=' . urlencode($date_to) : '' ?>"><?= $i ?></a>
-                                    <?php endif; ?>
-                                <?php endfor; ?>
-                                
-                                <?php if ($page < $total_pages): ?>
-                                    <a class="px-4 py-2 text-sm font-medium text-subtext-light dark:text-subtext-dark bg-white dark:bg-card-dark rounded-r-md hover:bg-gray-50 dark:hover:bg-gray-700" 
-                                       href="?page=<?= $page + 1 ?><?= $app_filter ? '&app=' . $app_filter : '' ?><?= $date_from ? '&date_from=' . urlencode($date_from) : '' ?><?= $date_to ? '&date_to=' . urlencode($date_to) : '' ?>">Next</a>
-                                <?php else: ?>
-                                    <span class="px-4 py-2 text-sm font-medium text-gray-400 bg-white dark:bg-card-dark rounded-r-md">Next</span>
-                                <?php endif; ?>
-                            </nav>
+                            
+                            <div class="entry-hours">
+                                <div class="hours-value"><?= number_format($entry['duration'], 1) ?>h</div>
+                                <a href="<?= htmlspecialchars($entry['app_url']) ?>" target="_blank" class="repo-link">
+                                    View Repository →
+                                </a>
+                            </div>
                         </div>
-                    <?php endif; ?>
-                <?php else: ?>
-                    <div class="text-center py-8">
-                        <div class="material-icons text-4xl text-subtext-light dark:text-subtext-dark mb-3">schedule</div>
-                        <h3 class="text-lg font-medium mb-2">No time entries found</h3>
-                        <p class="text-subtext-light dark:text-subtext-dark mb-4">
-                            <?php if ($app_filter || $date_from || $date_to): ?>
-                                No entries match your current filters. Try adjusting your search criteria.
-                            <?php elseif (!$has_entries): ?>
-                                You haven't logged any hours yet. <a href="dashboard.php" class="text-primary hover:underline">Start logging hours</a> to see them here.
-                            <?php else: ?>
-                                No entries found with the current filters.
-                            <?php endif; ?>
-                        </p>
-                        <?php if ($app_filter || $date_from || $date_to): ?>
-                            <a href="personal-history.php" class="inline-block bg-primary hover:bg-red-700 text-white font-bold py-2 px-4 rounded transition-colors">
-                                Clear Filters
+                    <?php endforeach; ?>
+                </div>
+                
+                <!-- Pagination -->
+                <?php if ($total_pages > 1): ?>
+                    <div class="pagination">
+                        <?php if ($page > 1): ?>
+                            <a href="?page=<?= $page - 1 ?><?= $app_filter ? '&app=' . $app_filter : '' ?><?= $date_from ? '&date_from=' . urlencode($date_from) : '' ?><?= $date_to ? '&date_to=' . urlencode($date_to) : '' ?>">
+                                ← Previous
                             </a>
                         <?php else: ?>
-                            <a href="dashboard.php" class="inline-block bg-primary hover:bg-red-700 text-white font-bold py-2 px-4 rounded transition-colors">
-                                Log Hours
+                            <span class="disabled">← Previous</span>
+                        <?php endif; ?>
+                        
+                        <?php 
+                        $start_page = max(1, $page - 2);
+                        $end_page = min($total_pages, $page + 2);
+                        ?>
+                        
+                        <?php for ($i = $start_page; $i <= $end_page; $i++): ?>
+                            <?php if ($i == $page): ?>
+                                <span class="active"><?= $i ?></span>
+                            <?php else: ?>
+                                <a href="?page=<?= $i ?><?= $app_filter ? '&app=' . $app_filter : '' ?><?= $date_from ? '&date_from=' . urlencode($date_from) : '' ?><?= $date_to ? '&date_to=' . urlencode($date_to) : '' ?>">
+                                    <?= $i ?>
+                                </a>
+                            <?php endif; ?>
+                        <?php endfor; ?>
+                        
+                        <?php if ($page < $total_pages): ?>
+                            <a href="?page=<?= $page + 1 ?><?= $app_filter ? '&app=' . $app_filter : '' ?><?= $date_from ? '&date_from=' . urlencode($date_from) : '' ?><?= $date_to ? '&date_to=' . urlencode($date_to) : '' ?>">
+                                Next →
                             </a>
+                        <?php else: ?>
+                            <span class="disabled">Next →</span>
                         <?php endif; ?>
                     </div>
                 <?php endif; ?>
-            </div>
-        </main>
+            <?php else: ?>
+                <div class="empty-state">
+                    <div class="material-icons">schedule</div>
+                    <h3>No time entries found</h3>
+                    <p>
+                        <?php if ($app_filter || $date_from || $date_to): ?>
+                            No entries match your current filters. Try adjusting your search criteria.
+                        <?php elseif (!$has_entries): ?>
+                            You haven't logged any hours yet. <a href="dashboard.php" style="color: #DD5A3A; font-weight: 600;">Start logging hours</a> to see them here.
+                        <?php else: ?>
+                            No entries found with the current filters.
+                        <?php endif; ?>
+                    </p>
+                    <?php if ($app_filter || $date_from || $date_to): ?>
+                        <a href="personal-history.php" class="btn-primary" style="display: inline-block; width: auto;">
+                            Clear Filters
+                        </a>
+                    <?php else: ?>
+                        <a href="dashboard.php" class="btn-primary" style="display: inline-block; width: auto;">
+                            Log Hours
+                        </a>
+                    <?php endif; ?>
+                </div>
+            <?php endif; ?>
+        </div>
     </div>
     
     <script>
-        document.getElementById('theme-toggle').addEventListener('click', () => {
-            document.body.classList.toggle('dark-mode');
-        });
-        
         // Monthly Chart
+        // Monthly data is still available for other potential uses
         const monthlyData = <?= json_encode($monthly_data) ?>;
-        
-        function createMonthlyChart() {
-            const canvas = document.getElementById('monthlyChart');
-            if (!canvas) {
-                console.log('Monthly chart canvas not found');
-                return;
-            }
-            
-            if (!monthlyData || monthlyData.length === 0) {
-                console.log('No monthly data available');
-                // Show a message instead of hiding
-                const chartContainer = canvas.closest('.bg-card-light, .bg-card-dark');
-                if (chartContainer) {
-                    const existingMessage = chartContainer.querySelector('.no-data-message');
-                    if (!existingMessage) {
-                        const message = document.createElement('div');
-                        message.className = 'no-data-message text-center py-8 text-subtext-light dark:text-subtext-dark';
-                        message.innerHTML = '<p>No activity data available for this year.</p>';
-                        chartContainer.appendChild(message);
-                    }
-                    canvas.style.display = 'none';
-                }
-                return;
-            }
-            
-            try {
-                const ctx = canvas.getContext('2d');
-                const months = monthlyData.map(item => {
-                    const date = new Date(item.month + '-01');
-                    return date.toLocaleDateString('en-US', { month: 'short' });
-                }).reverse();
-                const hours = monthlyData.map(item => parseFloat(item.total_hours) || 0).reverse();
-                
-                // Remove any existing no-data message
-                const chartContainer = canvas.closest('.bg-card-light, .bg-card-dark');
-                const existingMessage = chartContainer.querySelector('.no-data-message');
-                if (existingMessage) {
-                    existingMessage.remove();
-                }
-                canvas.style.display = 'block';
-                
-                new Chart(ctx, {
-                    type: 'bar',
-                    data: {
-                        labels: months,
-                        datasets: [{
-                            label: 'Hours Logged',
-                            data: hours,
-                            backgroundColor: '#DD5A3A',
-                            borderColor: '#ea5302',
-                            borderWidth: 1
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        scales: {
-                            y: {
-                                beginAtZero: true,
-                                ticks: {
-                                    stepSize: 1
-                                }
-                            }
-                        },
-                        plugins: {
-                            legend: {
-                                display: false
-                            }
-                        }
-                    }
-                });
-            } catch (error) {
-                console.error('Chart creation failed:', error);
-                // Show error message
-                const chartContainer = canvas.closest('.bg-card-light, .bg-card-dark');
-                if (chartContainer) {
-                    const errorMessage = document.createElement('div');
-                    errorMessage.className = 'text-center py-4 text-red-500';
-                    errorMessage.innerHTML = '<p>Chart could not be loaded.</p>';
-                    chartContainer.appendChild(errorMessage);
-                    canvas.style.display = 'none';
-                }
-            }
-        }
-        
-        // Create chart when page loads
-        document.addEventListener('DOMContentLoaded', createMonthlyChart);
     </script>
 </body>
 </html>

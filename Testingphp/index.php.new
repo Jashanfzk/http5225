@@ -1,0 +1,375 @@
+<?php
+/**
+ * BrickMMO Timesheets - Home Page
+ * Public repository listing with GitHub API integration and database statistics
+ */
+
+require_once 'config/config.php';
+require_once 'config/database.php';
+require_once 'includes/GitHubAPI.php';
+
+// Pagination setup
+$perPage = 9;
+$currentPage = isset($_GET['page']) ? max(1, intval($_GET['page'])) : 1;
+
+// Get search parameters
+$searchTerm = isset($_GET['search']) ? trim($_GET['search']) : '';
+$filterName = isset($_GET['filter_name']) ? true : false;
+$filterLanguage = isset($_GET['filter_language']) ? true : false;
+$filterDescription = isset($_GET['filter_description']) ? true : false;
+
+// If no filters are set, default to name and language
+if (!$filterName && !$filterLanguage && !$filterDescription) {
+    $filterName = true;
+    $filterLanguage = true;
+}
+
+// Check if user is logged in
+$isLoggedIn = isset($_SESSION['user_id']) && !empty($_SESSION['user_id']);
+
+// GitHub API integration - using our GitHubAPI.php helper functions
+
+try {
+    $database = new Database();
+    $db = $database->getConnection();
+    
+    // Check if GitHub organization is defined
+    $organization = defined('GITHUB_ORG') && !empty(GITHUB_ORG) ? GITHUB_ORG : 'BrickMMO';
+    
+    // Feedback for debugging
+    if (isset($_GET['debug']) && $_GET['debug'] === '1') {
+        echo "<div style='padding: 10px; background: #fffae6; border: 1px solid #e6b800; margin-bottom: 20px;'>";
+        echo "<p><strong>GitHub API Debug Mode:</strong> Attempting to connect to $organization organization</p>";
+        echo "<p>For detailed API diagnostics, visit <a href='test-github-api.php'>GitHub API Test Page</a></p>";
+        echo "</div>";
+        $debug = true;
+    } else {
+        $debug = false;
+    }
+    
+    // Use GitHub token if defined
+    $token = defined('GITHUB_TOKEN') && !empty(GITHUB_TOKEN) ? GITHUB_TOKEN : null;
+    
+    // Fetch all repositories from GitHub API
+    $githubRepos = fetchAllGitHubRepos($organization, $token, $debug);
+    
+    // Check if we got valid repositories
+    if (empty($githubRepos)) {
+        error_log("No GitHub repositories returned or error occurred - falling back to database only");
+        $githubRepos = []; // Ensure it's an empty array even if null was returned
+        
+        // If GitHub API fails, we'll create repository objects from database data only
+        if (!empty($dbRepos)) {
+            foreach ($dbRepos as $dbRepo) {
+                // Only include active repositories in fallback mode
+                if ($dbRepo['is_active']) {
+                    $githubRepos[] = [
+                        'name' => $dbRepo['name'],
+                        'full_name' => 'BrickMMO/' . $dbRepo['name'],
+                        'description' => $dbRepo['description'] ?? 'No description available',
+                        'html_url' => 'https://github.com/BrickMMO/' . $dbRepo['name'],
+                        'language' => $dbRepo['primary_language'] ?? 'N/A',
+                        'id' => $dbRepo['id'],
+                        'is_fallback' => true // Mark as fallback data
+                    ];
+                }
+            }
+        }
+        
+        // If still no repositories, create demo repositories to avoid empty page
+        if (empty($githubRepos)) {
+            error_log("No repositories found in database either - using demo data");
+            $githubRepos = [
+                [
+                    'name' => 'demo-repository',
+                    'full_name' => "$organization/demo-repository",
+                    'description' => 'Demo repository for testing. GitHub API access issue detected.',
+                    'html_url' => "https://github.com/$organization/demo-repository",
+                    'language' => 'PHP',
+                    'id' => 0,
+                    'is_demo' => true
+                ],
+                [
+                    'name' => 'another-demo-repo',
+                    'full_name' => "$organization/another-demo-repo",
+                    'description' => 'Second demo repository for testing. Please check GitHub API access.',
+                    'html_url' => "https://github.com/$organization/another-demo-repo",
+                    'language' => 'JavaScript',
+                    'id' => 1,
+                    'is_demo' => true
+                ]
+            ];
+        }
+    }
+    // Set to calculate total count correctly
+    $totalRepos = count($githubRepos);
+    
+    // Apply search filtering
+    if (!empty($searchTerm)) {
+        $filteredRepos = [];
+        foreach ($githubRepos as $repo) {
+            $matchFound = false;
+            
+            // Apply filters based on user selection
+            if ($filterName && stripos($repo["name"], $searchTerm) !== false) {
+                $matchFound = true;
+            }
+            
+            if ($filterLanguage && isset($repo["language"]) && stripos($repo["language"], $searchTerm) !== false) {
+                $matchFound = true;
+            }
+            
+            if ($filterDescription && isset($repo["description"]) && stripos($repo["description"], $searchTerm) !== false) {
+                $matchFound = true;
+            }
+            
+            if ($matchFound) {
+                $filteredRepos[] = $repo;
+            }
+        }
+        
+        $githubRepos = $filteredRepos;
+        $totalRepos = count($filteredRepos);
+    }
+    
+    // Calculate pagination
+    $totalPages = ceil($totalRepos / $perPage);
+    $currentPage = min($currentPage, max(1, $totalPages));
+    $startIndex = ($currentPage - 1) * $perPage;
+    
+    // Get repositories for the current page
+    $currentPageRepos = array_slice($githubRepos, $startIndex, $perPage);
+    
+    // Prepare unique languages for filter options
+    $languages = [];
+    foreach ($githubRepos as $repo) {
+        if (!empty($repo["language"]) && !in_array($repo["language"], $languages)) {
+            $languages[] = $repo["language"];
+        }
+    }
+    sort($languages);
+
+    // Query database for active repositories for additional metadata
+    $stmt = $db->prepare("SELECT r.name, r.description, r.primary_language, 
+                        COUNT(DISTINCT c.id) AS contributors_count,
+                        MAX(c.last_commit_date) AS latest_commit_date,
+                        COUNT(DISTINCT a.id) AS applications_count
+                        FROM repositories r 
+                        LEFT JOIN contributors c ON r.id = c.repository_id 
+                        LEFT JOIN applications a ON r.id = a.repository_id
+                        WHERE r.is_active = 1
+                        GROUP BY r.id");
+    $stmt->execute();
+    
+    $dbRepos = [];
+    while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+        $dbRepos[$row["name"]] = $row;
+    }
+
+    // Create an associative array mapping repository names to their database data (if exists)
+    $repoMetadata = [];
+    foreach ($currentPageRepos as $repo) {
+        $repoName = $repo["name"];
+        $repoMetadata[$repoName] = isset($dbRepos[$repoName]) ? $dbRepos[$repoName] : null;
+    }
+
+} catch (Exception $e) {
+    error_log("Error in GitHub API processing: " . $e->getMessage());
+    echo "<div class='alert alert-danger'><strong>Error:</strong> " . $e->getMessage() . "</div>";
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BrickMMO Project Repository</title>
+    
+    <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
+    <link rel="stylesheet" href="css/w3-theme.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="w3-theme-l5">
+
+<!-- Navigation -->
+<div class="w3-top">
+    <div class="w3-bar w3-theme-d2 w3-left-align w3-large">
+        <a class="w3-bar-item w3-button w3-hide-medium w3-hide-large w3-right w3-padding-large w3-hover-white w3-large w3-theme-d2" href="javascript:void(0);" onclick="toggleNavigation()"><i class="fa fa-bars"></i></a>
+        <a href="index.php" class="w3-bar-item w3-button w3-padding-large w3-theme-d4">
+            <i class="fa fa-home w3-margin-right"></i>Repositories
+        </a>
+        <?php if ($isLoggedIn): ?>
+        <a href="dashboard.php" class="w3-bar-item w3-button w3-hide-small w3-padding-large w3-hover-white">
+            <i class="fa fa-dashboard w3-margin-right"></i>Dashboard
+        </a>
+        <a href="personal-history.php" class="w3-bar-item w3-button w3-hide-small w3-padding-large w3-hover-white">
+            <i class="fa fa-history w3-margin-right"></i>My History
+        </a>
+        <a href="auth/logout.php" class="w3-bar-item w3-button w3-hide-small w3-padding-large w3-hover-white w3-right">
+            <i class="fa fa-sign-out w3-margin-right"></i>Logout
+        </a>
+        <?php else: ?>
+        <a href="auth/login.php" class="w3-bar-item w3-button w3-hide-small w3-padding-large w3-hover-white w3-right">
+            <i class="fa fa-sign-in w3-margin-right"></i>Login with GitHub
+        </a>
+        <?php endif; ?>
+    </div>
+</div>
+
+<!-- Navbar on small screens -->
+<div id="navDemo" class="w3-bar-block w3-theme-d2 w3-hide w3-hide-large w3-hide-medium w3-large">
+    <?php if ($isLoggedIn): ?>
+    <a href="dashboard.php" class="w3-bar-item w3-button w3-padding-large">Dashboard</a>
+    <a href="personal-history.php" class="w3-bar-item w3-button w3-padding-large">My History</a>
+    <a href="auth/logout.php" class="w3-bar-item w3-button w3-padding-large">Logout</a>
+    <?php else: ?>
+    <a href="auth/login.php" class="w3-bar-item w3-button w3-padding-large">Login with GitHub</a>
+    <?php endif; ?>
+</div>
+
+<!-- Page Container -->
+<div class="w3-container w3-content" style="max-width:1400px;margin-top:80px">
+    <div class="w3-panel">
+        <h1>BrickMMO Projects</h1>
+        <p>Browse through BrickMMO projects and contribute to the ones that interest you.</p>
+        
+        <?php if (isset($debug) && $debug): ?>
+        <div class="w3-panel w3-pale-yellow w3-leftbar w3-border-yellow">
+            <p>Debug mode enabled. Showing raw GitHub API response information.</p>
+        </div>
+        <?php endif; ?>
+
+        <!-- Search Box -->
+        <div class="w3-card w3-round w3-white w3-padding">
+            <form method="GET" action="index.php">
+                <div class="w3-row-padding">
+                    <div class="w3-col m6">
+                        <div class="w3-container">
+                            <input type="text" name="search" class="w3-input w3-border" placeholder="Search repositories..." value="<?php echo htmlspecialchars($searchTerm); ?>">
+                        </div>
+                    </div>
+                    <div class="w3-col m4">
+                        <div class="w3-container">
+                            <label class="w3-checkbox">
+                                <input type="checkbox" name="filter_name" <?php echo $filterName ? "checked" : ""; ?>> Name
+                            </label>
+                            <label class="w3-checkbox">
+                                <input type="checkbox" name="filter_language" <?php echo $filterLanguage ? "checked" : ""; ?>> Language
+                            </label>
+                            <label class="w3-checkbox">
+                                <input type="checkbox" name="filter_description" <?php echo $filterDescription ? "checked" : ""; ?>> Description
+                            </label>
+                        </div>
+                    </div>
+                    <div class="w3-col m2">
+                        <div class="w3-container">
+                            <button type="submit" class="w3-button w3-theme-d1 w3-block">Search</button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- Repository Count -->
+        <div class="w3-panel">
+            <span class="w3-opacity">
+                <?php echo $totalRepos; ?> repositories found <?php echo !empty($searchTerm) ? "matching \"" . htmlspecialchars($searchTerm) . "\"" : ""; ?>
+            </span>
+        </div>
+
+        <!-- Repository Grid -->
+        <div class="w3-row-padding">
+            <?php foreach ($currentPageRepos as $repo): ?>
+                <div class="w3-col m4">
+                    <div class="w3-card-4 w3-round w3-white w3-margin-bottom">
+                        <div class="w3-container w3-theme w3-padding">
+                            <h4>
+                                <?php if (isset($repo['is_demo']) && $repo['is_demo']): ?>
+                                <span class="w3-tag w3-round w3-yellow w3-small">DEMO</span>
+                                <?php elseif (isset($repo['is_fallback']) && $repo['is_fallback']): ?>
+                                <span class="w3-tag w3-round w3-orange w3-small">OFFLINE MODE</span>
+                                <?php endif; ?>
+                                <a href="repository.php?name=<?php echo urlencode($repo['name']); ?>" class="w3-text-white">
+                                    <?php echo htmlspecialchars($repo['name']); ?>
+                                </a>
+                            </h4>
+                            <?php if (!empty($repo['language'])): ?>
+                                <span class="w3-tag w3-round w3-theme-l3 w3-small">
+                                    <?php echo htmlspecialchars($repo['language']); ?>
+                                </span>
+                            <?php endif; ?>
+                            <?php 
+                            $repoName = $repo['name'];
+                            if (isset($repoMetadata[$repoName]) && !empty($repoMetadata[$repoName]['contributors_count'])): 
+                            ?>
+                                <span class="w3-tag w3-round w3-green w3-small">
+                                    <?php echo $repoMetadata[$repoName]['contributors_count']; ?> contributors
+                                </span>
+                            <?php endif; ?>
+                        </div>
+                        
+                        <div class="w3-container w3-padding">
+                            <p class="repo-description">
+                                <?php echo !empty($repo['description']) ? htmlspecialchars($repo['description']) : 'No description available'; ?>
+                            </p>
+                            
+                            <hr>
+                            
+                            <p class="repo-details">
+                                <a href="repository.php?name=<?php echo urlencode($repo['name']); ?>" class="w3-button w3-theme-d1 w3-margin-right">
+                                    <i class="fa fa-info-circle"></i> Details
+                                </a>
+                                <a href="<?php echo htmlspecialchars($repo['html_url']); ?>" target="_blank" class="w3-button w3-theme-l4">
+                                    <i class="fab fa-github"></i> GitHub
+                                </a>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            <?php endforeach; ?>
+        </div>
+        
+        <!-- Pagination -->
+        <?php if ($totalPages > 1): ?>
+        <div class="w3-bar w3-center">
+            <?php if ($currentPage > 1): ?>
+                <a href="?page=<?php echo $currentPage - 1; ?><?php echo !empty($searchTerm) ? '&search=' . urlencode($searchTerm) : ''; ?>" class="w3-bar-item w3-button w3-hover-theme">&laquo; Previous</a>
+            <?php endif; ?>
+            
+            <?php for ($i = max(1, $currentPage - 2); $i <= min($totalPages, $currentPage + 2); $i++): ?>
+                <?php if ($i == $currentPage): ?>
+                    <span class="w3-bar-item w3-button w3-theme-d2"><?php echo $i; ?></span>
+                <?php else: ?>
+                    <a href="?page=<?php echo $i; ?><?php echo !empty($searchTerm) ? '&search=' . urlencode($searchTerm) : ''; ?>" class="w3-bar-item w3-button w3-hover-theme"><?php echo $i; ?></a>
+                <?php endif; ?>
+            <?php endfor; ?>
+            
+            <?php if ($currentPage < $totalPages): ?>
+                <a href="?page=<?php echo $currentPage + 1; ?><?php echo !empty($searchTerm) ? '&search=' . urlencode($searchTerm) : ''; ?>" class="w3-bar-item w3-button w3-hover-theme">Next &raquo;</a>
+            <?php endif; ?>
+        </div>
+        <?php endif; ?>
+    </div>
+</div>
+
+<!-- Footer -->
+<footer class="w3-container w3-theme-d5">
+    <div class="w3-padding w3-center">
+        <p>&copy; <?php echo date('Y'); ?> BrickMMO | <a href="https://github.com/BrickMMO" target="_blank">GitHub</a></p>
+    </div>
+</footer>
+
+<script>
+// Used to toggle the menu on smaller screens
+function toggleNavigation() {
+    var x = document.getElementById("navDemo");
+    if (x.className.indexOf("w3-show") == -1) {
+        x.className += " w3-show";
+    } else { 
+        x.className = x.className.replace(" w3-show", "");
+    }
+}
+</script>
+
+</body>
+</html>

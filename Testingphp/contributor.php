@@ -137,237 +137,111 @@ try {
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
     <title><?= htmlspecialchars($user['name'] ?? $username) ?> - BrickMMO Contributor</title>
     <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
-    <link rel="stylesheet" href="css/w3-theme.css">
+    <link rel="stylesheet" href="css/style.css">
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet"/>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
-    <style>
-        body {
-            font-family: 'Roboto', sans-serif;
-        }
-    </style>
 </head>
-<body class="w3-light-grey">
-    <div id="app">
-        <header class="brickmmo-nav w3-bar w3-white w3-padding">
-            <div class="w3-content w3-display-container">
-                <div class="w3-bar-item w3-left">
-                    <span class="w3-xxlarge w3-text-theme w3-bold">BrickMMO</span>
-                </div>
-                <nav class="w3-bar w3-right">
-                    <a class="w3-bar-item w3-button w3-hover-theme" href="index.php">Home</a>
-                    <?php if (isLoggedIn()): ?>
-                        <a class="w3-bar-item w3-button w3-hover-theme" href="dashboard.php">User Dashboard</a>
-                        <a class="w3-bar-item w3-button w3-hover-theme" href="auth/logout.php">Logout</a>
-                    <?php else: ?>
-                        <a class="w3-bar-item w3-button w3-hover-theme" href="auth/test-login.php">Login</a>
-                    <?php endif; ?>
-                    <button class="w3-bar-item w3-button w3-hover-theme" id="theme-toggle">
-                        <span class="material-icons">brightness_6</span>
-                    </button>
-                </nav>
+<body>
+    <!-- Navigation Header -->
+    <header style="background: white; border-bottom: 1px solid #E8D5CF; padding: 1.5rem 0; margin-bottom: 2rem;">
+        <div style="max-width: 1600px; margin: 0 auto; padding: 0 1rem; display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <a href="index.php">
+                    <img src="./assets/BrickMMO_Logo_Coloured.png" alt="BrickMMO" style="height: 48px;">
+                </a>
             </div>
-        </header>
-        
-        <main class="w3-content w3-padding-large">
-            <!-- Page Header -->
-            <div class="w3-margin-bottom">
-                <h1 class="w3-xxxlarge w3-text-theme w3-bold w3-margin-bottom">APPLICATIONS-V1</h1>
-                <p class="w3-text-grey w3-large">Detailed view of repository information and statistics</p>
-            </div>
-            
-            <!-- Summary Statistics -->
-            <div class="brickmmo-card w3-card w3-white w3-padding w3-margin-bottom">
-                <div class="w3-row">
-                    <div class="w3-col m4 w3-center w3-padding">
-                        <h4 class="w3-text-grey w3-small w3-margin-bottom">Total Hours</h4>
-                        <p class="w3-xxlarge w3-text-theme w3-bold"><?= number_format($user_stats['total_hours'] ?? 0, 0) ?></p>
-                    </div>
-                    <div class="w3-col m4 w3-center w3-padding">
-                        <h4 class="w3-text-grey w3-small w3-margin-bottom">Contributors</h4>
-                        <p class="w3-xxlarge w3-text-theme w3-bold"><?= $user_stats['projects_worked_on'] ?? 0 ?></p>
-                    </div>
-                    <div class="w3-col m4 w3-center w3-padding">
-                        <h4 class="w3-text-grey w3-small w3-margin-bottom">Time Entries</h4>
-                        <p class="w3-xxlarge w3-text-theme w3-bold"><?= $user_stats['total_entries'] ?? 0 ?></p>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Top Contributors -->
-            <div class="brickmmo-card w3-card w3-white w3-padding w3-margin-bottom">
-                <h2 class="w3-large w3-bold w3-margin-bottom">Top Contributors</h2>
-                <div class="w3-margin-bottom">
-                    <?php foreach ($top_contributors as $contributor): ?>
-                        <div class="w3-card w3-white w3-padding w3-margin-bottom w3-round">
-                            <div class="w3-row w3-display-container">
-                                <div class="w3-col m2">
-                                    <img src="<?= htmlspecialchars($contributor['avatar_url']) ?>" 
-                                         class="w3-circle" style="width:40px;height:40px;" 
-                                         alt="<?= htmlspecialchars($contributor['name'] ?? $contributor['login']) ?>">
-                                </div>
-                                <div class="w3-col m8">
-                                    <p class="w3-bold w3-margin-0"><?= htmlspecialchars($contributor['name'] ?? $contributor['login']) ?></p>
-                                </div>
-                                <div class="w3-col m2 w3-right-align">
-                                    <span class="w3-bold w3-text-theme"><?= number_format($contributor['total_hours'], 0) ?> hours</span>
-                                </div>
-                            </div>
-                        </div>
-                    <?php endforeach; ?>
-                </div>
-            </div>
-            
-            <!-- Monthly Chart -->
-            <?php if (!empty($monthly_data)): ?>
-                <div class="brickmmo-card w3-card w3-white w3-padding w3-margin-bottom">
-                    <h2 class="w3-large w3-bold w3-margin-bottom">Monthly Activity (<?= date('Y') ?>)</h2>
-                    <div class="chart-container">
-                        <canvas id="monthlyChart"></canvas>
-                    </div>
-                </div>
-            <?php endif; ?>
-            
-            <div class="w3-row">
-                <!-- Contributed Repositories -->
-                <div class="w3-col m6">
-                    <div class="brickmmo-card w3-card w3-white w3-padding w3-margin-right">
-                        <h2 class="w3-large w3-bold w3-margin-bottom">Contributed Repositories</h2>
-                        <?php if (!empty($contributed_repos)): ?>
-                            <div class="w3-margin-bottom">
-                                <?php foreach ($contributed_repos as $repo): ?>
-                                    <div class="w3-card w3-white w3-padding w3-margin-bottom w3-round">
-                                        <div class="w3-row">
-                                            <div class="w3-col m8">
-                                                <h3 class="w3-text-theme w3-bold w3-margin-bottom">
-                                                    <a href="repository.php?repo=<?= urlencode($repo['name']) ?>" class="w3-hover-underline">
-                                                        <?= htmlspecialchars($repo['name']) ?>
-                                                    </a>
-                                                </h3>
-                                                <?php if ($repo['description']): ?>
-                                                    <p class="w3-small w3-text-grey w3-margin-bottom">
-                                                        <?= htmlspecialchars($repo['description']) ?>
-                                                    </p>
-                                                <?php endif; ?>
-                                                <div class="w3-small w3-text-grey">
-                                                    <span><?= $repo['entries'] ?> entries</span> | 
-                                                    <span><?= number_format($repo['hours_contributed'], 1) ?>h contributed</span> | 
-                                                    <span>Last: <?= date('M j, Y', strtotime($repo['last_contribution'])) ?></span>
-                                                </div>
-                                            </div>
-                                            <div class="w3-col m4 w3-right-align">
-                                                <span class="w3-bold w3-text-theme"><?= number_format($repo['hours_contributed'], 1) ?>h</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                <?php endforeach; ?>
-                            </div>
-                        <?php else: ?>
-                            <div class="w3-center w3-padding-large">
-                                <div class="material-icons w3-xxlarge w3-text-grey w3-margin-bottom">folder_open</div>
-                                <p class="w3-text-grey">No contributions recorded yet.</p>
-                            </div>
-                        <?php endif; ?>
-                    </div>
-                </div>
+            <nav style="display: flex; gap: 2rem; align-items: center;">
+                <a href="<?= BASE_URL ?>" style="color: #DD5A3A; text-decoration: none; font-weight: 600; font-size: 0.95rem;">Home</a>
+                <a href="https://brickmmo.com" style="color: #DD5A3A; text-decoration: none; font-weight: 600; font-size: 0.95rem;">BrickMMO Main Site</a>
+                <?php if (isset($_SESSION['user_id'])): ?>
+                    <a href="<?= BASE_URL ?>dashboard.php" style="color: #DD5A3A; text-decoration: none; font-weight: 600; font-size: 0.95rem;">Dashboard</a>
+                    <a href="<?= BASE_URL ?>personal-history.php" style="color: #DD5A3A; text-decoration: none; font-weight: 600; font-size: 0.95rem;">My History</a>
+                    <a href="<?= BASE_URL ?>auth/logout.php" style="color: #DD5A3A; text-decoration: none; font-weight: 600; font-size: 0.95rem;">Logout</a>
+                <?php else: ?>
+                    <a href="<?= BASE_URL ?>auth/login.php" style="color: #DD5A3A; text-decoration: none; font-weight: 600; font-size: 0.95rem;">Login</a>
+                <?php endif; ?>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Repository Details Section -->
+    <section id="repository" style="padding: 3rem 1rem;">
+        <div class="w3-container" style="max-width: 1600px; margin: 0 auto;">
+            <div class="w3-card bg-brick brick-card" style="padding: 2rem;">
+                <h2 class="section-title"><?= htmlspecialchars($user['name'] ?? $username) ?></h2>
+                <p class="section-subtitle">Detailed view of contributor information and statistics</p>
                 
-                <!-- Recent Activity -->
-                <div class="w3-col m6">
-                    <div class="brickmmo-card w3-card w3-white w3-padding">
-                        <h2 class="w3-large w3-bold w3-margin-bottom">Recent Activity</h2>
-                        <?php if (!empty($recent_entries)): ?>
-                            <div class="w3-margin-bottom">
-                                <?php foreach ($recent_entries as $entry): ?>
-                                    <div class="w3-card w3-white w3-padding w3-margin-bottom w3-round">
-                                        <div class="w3-row">
-                                            <div class="w3-col m8">
-                                                <div class="w3-row w3-margin-bottom">
-                                                    <h4 class="w3-text-theme w3-bold w3-small w3-col m8">
-                                                        <a href="repository.php?repo=<?= urlencode($entry['app_name']) ?>" class="w3-hover-underline">
-                                                            <?= htmlspecialchars($entry['app_name']) ?>
-                                                        </a>
-                                                    </h4>
-                                                    <span class="w3-tiny w3-text-grey w3-col m4 w3-right-align">
-                                                        <?= date('M j', strtotime($entry['work_date'])) ?>
-                                                    </span>
-                                                </div>
-                                                <?php if ($entry['description']): ?>
-                                                    <p class="w3-tiny w3-text-grey">
-                                                        <?= htmlspecialchars(substr($entry['description'], 0, 80)) ?><?= strlen($entry['description']) > 80 ? '...' : '' ?>
-                                                    </p>
-                                                <?php endif; ?>
-                                            </div>
-                                            <div class="w3-col m4 w3-right-align">
-                                                <span class="w3-bold w3-text-theme w3-small"><?= number_format($entry['duration'], 1) ?>h</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                <?php endforeach; ?>
-                            </div>
-                            <div class="w3-center w3-margin-top">
-                                <a href="personal-history.php" class="w3-small w3-text-theme w3-hover-underline">
-                                    View All History
-                                </a>
-                            </div>
-                        <?php else: ?>
-                            <div class="w3-center w3-padding-large">
-                                <div class="material-icons w3-xxlarge w3-text-grey w3-margin-bottom">schedule</div>
-                                <p class="w3-text-grey">No recent activity.</p>
-                            </div>
-                        <?php endif; ?>
+                <!-- Stats Grid -->
+                <div class="stats-grid">
+                    <div class="stats-card">
+                        <h4 class="text-subtext" style="margin: 0;">Total Hours</h4>
+                        <p class="stats-num brick-orange" style="margin: 0.5rem 0 0 0;">
+                            <?= number_format($user_stats['total_hours'] ?? 0, 0) ?>
+                        </p>
+                    </div>
+                    <div class="stats-card">
+                        <h4 class="text-subtext" style="margin: 0;">Projects</h4>
+                        <p class="stats-num brick-orange" style="margin: 0.5rem 0 0 0;">
+                            <?= $user_stats['projects_worked_on'] ?? 0 ?>
+                        </p>
+                    </div>
+                    <div class="stats-card">
+                        <h4 class="text-subtext" style="margin: 0;">Time Entries</h4>
+                        <p class="stats-num brick-orange" style="margin: 0.5rem 0 0 0;">
+                            <?= $user_stats['total_entries'] ?? 0 ?>
+                        </p>
                     </div>
                 </div>
+
+                <!-- Repositories Contributed To -->
+                <h3 class="subsection-title">Repositories Contributed To</h3>
+                <?php if (!empty($contributed_repos)): ?>
+                    <div style="max-width: 100%;">
+                        <?php foreach ($contributed_repos as $repo): ?>
+                            <div class="contributor-item">
+                                <div class="contributor-left">
+                                    <a href="<?= BASE_URL ?>repository.php?repo=<?= urlencode($repo['name']) ?>" style="text-decoration: none;">
+                                        <span class="contributor-name"><?= htmlspecialchars($repo['name']) ?></span>
+                                    </a>
+                                    <?php if ($repo['language']): ?>
+                                        <span style="margin-left: 1rem; font-size: 0.85rem; color: #666;">
+                                            <?= htmlspecialchars($repo['language']) ?>
+                                        </span>
+                                    <?php endif; ?>
+                                </div>
+                                <div style="text-align: right;">
+                                    <span class="contributor-hours"><?= number_format($repo['hours_contributed'], 1) ?> hours</span>
+                                    <br>
+                                    <span style="font-size: 0.85rem; color: #999;">
+                                        <?= $repo['entries'] ?> <?= $repo['entries'] == 1 ? 'entry' : 'entries' ?>
+                                    </span>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                <?php else: ?>
+                    <div style="padding: 2rem; text-align: center; color: #999; background: #f8f9fa; border-radius: 0.5rem;">
+                        <p>No contributions recorded yet.</p>
+                    </div>
+                <?php endif; ?>
             </div>
-        </main>
-    </div>
+        </div>
+    </section>
     
     <script>
-        document.getElementById('theme-toggle').addEventListener('click', () => {
-            document.body.classList.toggle('dark-mode');
-        });
-        
-        // Monthly Chart
-        const monthlyData = <?= json_encode($monthly_data) ?>;
-        
-        if (monthlyData && monthlyData.length > 0) {
-            const ctx = document.getElementById('monthlyChart').getContext('2d');
-            const months = monthlyData.map(item => {
-                const date = new Date(item.month + '-01');
-                return date.toLocaleDateString('en-US', { month: 'short' });
-            }).reverse();
-            const hours = monthlyData.map(item => parseFloat(item.total_hours)).reverse();
-            
-            new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: months,
-                    datasets: [{
-                        label: 'Hours Logged',
-                        data: hours,
-                        backgroundColor: '#DD5A3A',
-                        borderColor: '#ea5302',
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            ticks: {
-                                stepSize: 1
-                            }
-                        }
-                    },
-                    plugins: {
-                        legend: {
-                            display: false
-                        }
-                    }
+        // Smooth scroll for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const targetId = this.getAttribute('href');
+                if (targetId.length > 1) {
+                    document.querySelector(targetId).scrollIntoView({
+                        behavior: 'smooth'
+                    });
                 }
             });
-        }
+        });
     </script>
 </body>
 </html>

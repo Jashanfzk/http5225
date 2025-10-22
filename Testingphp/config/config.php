@@ -34,6 +34,7 @@ define('SESSION_TIMEOUT', 3600); // 1 hour
 // GitHub API Configuration
 define('GITHUB_API_BASE', 'https://api.github.com');
 define('GITHUB_ORG', 'BrickMMO');
+define('GITHUB_TOKEN', ''); // Add your personal access token here if needed to avoid rate limiting
 
 // Application Settings
 define('ITEMS_PER_PAGE', 8);

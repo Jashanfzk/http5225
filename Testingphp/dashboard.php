@@ -1,6 +1,6 @@
 <?php
 /**
- * User Dashboard
+ * Contributor Profile
  * Log hours and view contribution history
  */
 
@@ -111,188 +111,417 @@ try {
 <head>
     <meta charset="utf-8"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-    <title>User Dashboard - BrickMMO Timesheets</title>
+    <title>Contributor Profile - BrickMMO Timesheets</title>
     <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
     <link rel="stylesheet" href="css/w3-theme.css">
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet"/>
-    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
         body {
-            font-family: 'Roboto', sans-serif;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #FDF6F3;
+            color: #333;
+        }
+        
+        .dashboard-container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 1rem;
+        }
+        
+        .dashboard-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid #E8D5CF;
+        }
+        
+        .dashboard-title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #2C3E50;
+            margin: 0;
+        }
+        
+        .dashboard-subtitle {
+            font-size: 0.95rem;
+            color: #666;
+            margin-top: 0.25rem;
+        }
+        
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        
+        .user-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            border: 2px solid #DD5A3A;
+        }
+        
+        .user-details {
+            text-align: left;
+        }
+        
+        .user-name {
+            font-weight: 600;
+            color: #2C3E50;
+            font-size: 0.95rem;
+            margin-bottom: 0.1rem;
+        }
+        
+        .user-logout {
+            color: #DD5A3A;
+            text-decoration: none;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+        
+        .user-logout:hover {
+            text-decoration: underline;
+        }
+        
+        .dashboard-content {
+            display: grid;
+            grid-template-columns: minmax(300px, 1fr) minmax(600px, 2fr);
+            gap: 1.5rem;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        }
+        
+        .card-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #2C3E50;
+            margin-bottom: 1.5rem;
+        }
+        
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+        
+        .form-label {
+            display: block;
+            font-weight: 500;
+            color: #555;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 0.65rem 0.9rem;
+            border: 1px solid #DDD;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            font-family: inherit;
+            transition: border-color 0.2s;
+        }
+        
+        .form-control:focus {
+            outline: none;
+            border-color: #DD5A3A;
+            box-shadow: 0 0 0 3px rgba(221, 90, 58, 0.1);
+        }
+        
+        textarea.form-control {
+            resize: vertical;
+            min-height: 80px;
+        }
+        
+        .btn-submit {
+            width: 100%;
+            background: #DD5A3A;
+            color: white;
+            border: none;
+            padding: 0.75rem;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: background 0.2s;
+            margin-top: 0.5rem;
+        }
+        
+        .btn-submit:hover {
+            background: #C44A2A;
+        }
+        
+        .alert {
+            padding: 1rem 1.25rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+            font-size: 0.9rem;
+        }
+        
+        .alert-success {
+            background: #D4EDDA;
+            color: #155724;
+            border: 1px solid #C3E6CB;
+        }
+        
+        .alert-error {
+            background: #F8D7DA;
+            color: #721C24;
+            border: 1px solid #F5C6CB;
+        }
+        
+        .history-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+        
+        .history-table thead {
+            background: #FDF6F3;
+        }
+        
+        .history-table th {
+            padding: 0.9rem 1rem;
+            text-align: left;
+            font-weight: 600;
+            font-size: 0.8rem;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            border-bottom: 2px solid #E8D5CF;
+        }
+        
+        .history-table td {
+            padding: 1rem;
+            border-bottom: 1px solid #F0F0F0;
+            font-size: 0.9rem;
+        }
+        
+        .history-table tbody tr:hover {
+            background: #FEFBFA;
+        }
+        
+        .repo-name {
+            font-weight: 600;
+            color: #DD5A3A;
+        }
+        
+        .date-text {
+            color: #666;
+        }
+        
+        .hours-text {
+            font-weight: 600;
+            color: #2C3E50;
+        }
+        
+        .description-text {
+            color: #666;
+            max-width: 300px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        .btn-edit {
+            color: #DD5A3A;
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 0.85rem;
+        }
+        
+        .btn-edit:hover {
+            text-decoration: underline;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 3rem 2rem;
+            color: #999;
+            background: #FAFAFA;
+            border-radius: 8px;
+        }
+        
+        @media (max-width: 1200px) {
+            .dashboard-content {
+                grid-template-columns: 1fr;
+            }
+            
+            .dashboard-container {
+                padding: 1rem;
+                max-width: 95%;
+            }
+        }
+        
+        @media (max-width: 640px) {
+            .dashboard-container {
+                padding: 0.75rem;
+                max-width: 100%;
+            }
+            
+            .dashboard-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1rem;
+            }
+            
+            .dashboard-title {
+                font-size: 1.5rem;
+            }
         }
     </style>
 </head>
-<body class="w3-light-grey">
-    <div id="app">
-        <header class="brickmmo-nav w3-bar w3-white w3-padding">
-            <div class="w3-content w3-display-container">
-                <div class="w3-bar-item w3-left">
-                    <span class="w3-xxlarge w3-text-theme w3-bold">BrickMMO</span>
-                </div>
-                <nav class="w3-bar w3-right">
-                    <a class="w3-bar-item w3-button w3-hover-theme" href="index.php">Home</a>
-                    <a class="w3-bar-item w3-button w3-hover-theme" href="personal-history.php">View History</a>
-                    <a class="w3-bar-item w3-button w3-hover-theme" href="auth/logout.php">Logout</a>
-                    <button class="w3-bar-item w3-button w3-hover-theme" id="theme-toggle">
-                        <span class="material-icons">brightness_6</span>
-                    </button>
-                </nav>
+<body>
+    <!-- Navigation Header -->
+    <header style="background: white; border-bottom: 1px solid #E8D5CF; padding: 1.5rem 0; margin-bottom: 2rem;">
+        <div style="max-width: 1600px; margin: 0 auto; padding: 0 1rem; display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <a href="index.php">
+                    <img src="./assets/BrickMMO_Logo_Coloured.png" alt="BrickMMO" style="height: 48px;">
+                </a>
             </div>
-        </header>
-        
-        <main class="w3-content w3-padding-large">
-            <section id="dashboard">
-                <div class="brickmmo-card w3-card w3-white w3-padding-large">
-                    <div class="w3-row w3-margin-bottom">
-                        <div class="w3-col m6">
-                            <h2 class="w3-xxxlarge w3-text-theme w3-bold">User Dashboard</h2>
-                            <p class="w3-text-grey">Log your hours and view your contribution history.</p>
-                        </div>
-                        <div class="w3-col m6 w3-right-align">
-                            <div class="w3-display-container">
-                                <img alt="User avatar" class="w3-circle w3-margin-right" style="width:48px;height:48px;" src="<?= htmlspecialchars($user['avatar_url']) ?>"/>
-                                <div class="w3-display-right">
-                                    <p class="w3-bold"><?= htmlspecialchars($user['name'] ?? $user['login']) ?></p>
-                                    <a class="w3-small w3-text-theme w3-hover-underline" href="auth/logout.php">Logout</a>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Messages -->
-                    <?php if ($message): ?>
-                        <div class="w3-panel w3-green w3-padding w3-round w3-margin-bottom">
-                            <?= htmlspecialchars($message) ?>
-                        </div>
-                    <?php endif; ?>
-                    
-                    <?php if ($error): ?>
-                        <div class="w3-panel w3-red w3-padding w3-round w3-margin-bottom">
-                            <?= htmlspecialchars($error) ?>
-                        </div>
-                    <?php endif; ?>
-                    
-                    <!-- User Statistics -->
-                    <div class="brickmmo-stats-grid w3-margin-bottom">
-                        <div class="brickmmo-stats-item">
-                            <h4>Total Hours</h4>
-                            <p><?= number_format($user_stats['total_hours'] ?? 0, 1) ?></p>
-                        </div>
-                        <div class="brickmmo-stats-item">
-                            <h4>Total Entries</h4>
-                            <p><?= $user_stats['total_entries'] ?? 0 ?></p>
-                        </div>
-                        <div class="brickmmo-stats-item">
-                            <h4>Projects</h4>
-                            <p><?= $user_stats['projects_worked_on'] ?? 0 ?></p>
-                        </div>
-                        <div class="brickmmo-stats-item">
-                            <h4>Since</h4>
-                            <p class="w3-small">
-                                <?= $user_stats['first_entry'] ? date('M j, Y', strtotime($user_stats['first_entry'])) : 'N/A' ?>
-                            </p>
-                        </div>
-                    </div>
-                    
-                    <div class="w3-row">
-                        <!-- Log New Hours Form -->
-                        <div class="w3-col m4">
-                            <h3 class="w3-xlarge w3-bold w3-margin-bottom">Log New Hours</h3>
-                            <form method="POST">
-                                <input type="hidden" name="csrf_token" value="<?= generateCSRFToken() ?>">
-                                
-                                <div class="w3-margin-bottom">
-                                    <label class="w3-text-grey" for="application_id">Repository</label>
-                                    <select class="w3-select w3-border w3-input" id="application_id" name="application_id" required>
-                                        <option value="">Select a repository...</option>
-                                        <?php foreach ($applications as $app): ?>
-                                            <option value="<?= $app['id'] ?>" <?= (isset($_POST['application_id']) && $_POST['application_id'] == $app['id']) ? 'selected' : '' ?>>
-                                                <?= htmlspecialchars($app['name']) ?>
-                                            </option>
-                                        <?php endforeach; ?>
-                                    </select>
-                                </div>
-                                
-                                <div class="w3-margin-bottom">
-                                    <label class="w3-text-grey" for="work_date">Date</label>
-                                    <input class="w3-input w3-border" id="work_date" name="work_date" type="date" 
-                                           value="<?= isset($_POST['work_date']) ? htmlspecialchars($_POST['work_date']) : date('Y-m-d') ?>"
-                                           max="<?= date('Y-m-d') ?>" required/>
-                                </div>
-                                
-                                <div class="w3-margin-bottom">
-                                    <label class="w3-text-grey" for="duration">Hours</label>
-                                    <input class="w3-input w3-border" id="duration" name="duration" min="<?= MIN_HOURS_PER_ENTRY ?>" max="<?= MAX_HOURS_PER_DAY ?>" 
-                                           step="0.25" type="number" 
-                                           value="<?= isset($_POST['duration']) ? htmlspecialchars($_POST['duration']) : '' ?>"
-                                           placeholder="e.g., 2.5" required/>
-                                </div>
-                                
-                                <div class="w3-margin-bottom">
-                                    <label class="w3-text-grey" for="description">Description</label>
-                                    <textarea class="w3-input w3-border" id="description" name="description" rows="3" 
-                                              placeholder="What did you work on?"><?= isset($_POST['description']) ? htmlspecialchars($_POST['description']) : '' ?></textarea>
-                                </div>
-                                
-                                <button class="w3-button w3-theme w3-block" type="submit" name="log_hours">
-                                    Log Hours
-                                </button>
-                            </form>
-                        </div>
-                        
-                        <!-- Recent Entries -->
-                        <div class="w3-col m8">
-                            <h3 class="w3-xlarge w3-bold w3-margin-bottom">Recent Entries</h3>
-                            <?php if (!empty($recent_entries)): ?>
-                                <div class="w3-margin-bottom">
-                                    <?php foreach ($recent_entries as $entry): ?>
-                                        <div class="w3-card w3-white w3-padding w3-margin-bottom">
-                                            <div class="w3-row">
-                                                <div class="w3-col m10">
-                                                    <div class="w3-row w3-margin-bottom">
-                                                        <h4 class="w3-text-theme w3-bold w3-col m6"><?= htmlspecialchars($entry['app_name']) ?></h4>
-                                                        <span class="w3-small w3-text-grey w3-col m6 w3-right-align">
-                                                            <?= date('M j, Y', strtotime($entry['work_date'])) ?>
-                                                        </span>
-                                                    </div>
-                                                    <?php if ($entry['description']): ?>
-                                                        <p class="w3-small w3-text-grey w3-margin-bottom">
-                                                            <?= htmlspecialchars($entry['description']) ?>
-                                                        </p>
-                                                    <?php endif; ?>
-                                                    <p class="w3-tiny w3-text-grey">
-                                                        Logged <?= date('M j, Y g:i A', strtotime($entry['created_at'])) ?>
-                                                    </p>
-                                                </div>
-                                                <div class="w3-col m2 w3-right-align">
-                                                    <span class="w3-bold w3-text-theme"><?= number_format($entry['duration'], 1) ?>h</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    <?php endforeach; ?>
-                                </div>
-                                <div class="w3-center w3-margin-top">
-                                    <a href="personal-history.php" class="w3-button w3-theme">
-                                        View All History
-                                    </a>
-                                </div>
-                            <?php else: ?>
-                                <div class="w3-card w3-white w3-padding-large w3-center w3-border w3-border-dashed">
-                                    <h4 class="w3-large w3-bold w3-margin-bottom">No entries yet</h4>
-                                    <p class="w3-text-grey w3-margin-bottom">Start logging your hours to see them here.</p>
-                                </div>
-                            <?php endif; ?>
-                        </div>
-                    </div>
+            <nav style="display: flex; gap: 2rem; align-items: center;">
+                <a href="<?= BASE_URL ?>" style="color: #DD5A3A; text-decoration: none; font-weight: 600; font-size: 0.95rem;">Home</a>
+                <a href="<?= BASE_URL ?>dashboard.php" style="color: #DD5A3A; text-decoration: none; font-weight: 600; font-size: 0.95rem;">Dashboard</a>
+                <a href="<?= BASE_URL ?>personal-history.php" style="color: #DD5A3A; text-decoration: none; font-weight: 600; font-size: 0.95rem;">My History</a>
+                <a href="https://brickmmo.com" style="color: #DD5A3A; text-decoration: none; font-weight: 600; font-size: 0.95rem;">BrickMMO Main Site</a>
+                <a href="<?= BASE_URL ?>auth/logout.php" style="color: #DD5A3A; text-decoration: none; font-weight: 600; font-size: 0.95rem;">Logout</a>
+            </nav>
+        </div>
+    </header>
+
+    <div class="dashboard-container">
+        <!-- Header -->
+        <div class="dashboard-header">
+            <div>
+                <h1 class="dashboard-title">Contributor Profile</h1>
+                <p class="dashboard-subtitle">Log your hours and view your contribution history.</p>
+            </div>
+            <div class="user-profile">
+                <img src="<?= htmlspecialchars($user['avatar_url']) ?>" alt="User avatar" class="user-avatar"/>
+                <div class="user-details">
+                    <div class="user-name"><?= htmlspecialchars($user['name'] ?? $user['login']) ?></div>
+                    <a href="auth/logout.php" class="user-logout">Logout</a>
                 </div>
-            </section>
-        </main>
+            </div>
+        </div>
+        
+        <!-- Messages -->
+        <?php if ($message): ?>
+            <div class="alert alert-success">
+                <?= htmlspecialchars($message) ?>
+            </div>
+        <?php endif; ?>
+        
+        <?php if ($error): ?>
+            <div class="alert alert-error">
+                <?= htmlspecialchars($error) ?>
+            </div>
+        <?php endif; ?>
+        
+        <!-- Main Content -->
+        <div class="dashboard-content">
+            <!-- Left: Log New Hours -->
+            <div class="card">
+                <h2 class="card-title">Log New Hours</h2>
+                <form method="POST">
+                    <input type="hidden" name="csrf_token" value="<?= generateCSRFToken() ?>">
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="application_id">Repository</label>
+                        <select class="form-control" id="application_id" name="application_id" required>
+                            <option value="">Select a repository...</option>
+                            <?php foreach ($applications as $app): ?>
+                                <option value="<?= $app['id'] ?>" <?= (isset($_POST['application_id']) && $_POST['application_id'] == $app['id']) ? 'selected' : '' ?>>
+                                    <?= htmlspecialchars($app['name']) ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="work_date">Date</label>
+                        <input class="form-control" id="work_date" name="work_date" type="date" 
+                               value="<?= isset($_POST['work_date']) ? htmlspecialchars($_POST['work_date']) : date('Y-m-d') ?>"
+                               max="<?= date('Y-m-d') ?>" required/>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="duration">Hours</label>
+                        <input class="form-control" id="duration" name="duration" min="<?= MIN_HOURS_PER_ENTRY ?>" max="<?= MAX_HOURS_PER_DAY ?>" 
+                               step="0.25" type="number" 
+                               value="<?= isset($_POST['duration']) ? htmlspecialchars($_POST['duration']) : '' ?>"
+                               placeholder="0.00" required/>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="description">Description</label>
+                        <textarea class="form-control" id="description" name="description" 
+                                  placeholder="Describe your work..."><?= isset($_POST['description']) ? htmlspecialchars($_POST['description']) : '' ?></textarea>
+                    </div>
+                    
+                    <button type="submit" name="log_hours" class="btn-submit">
+                        Log Hours
+                    </button>
+                </form>
+            </div>
+
+            <!-- Right: Personal History -->
+            <div class="card">
+                <h2 class="card-title">Personal History</h2>
+                
+                <?php if (!empty($recent_entries)): ?>
+                    <div class="w3-responsive">
+                        <table class="history-table">
+                            <thead>
+                                <tr>
+                                    <th>Repository</th>
+                                    <th>Date</th>
+                                    <th>Hours</th>
+                                    <th>Description</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($recent_entries as $entry): ?>
+                                    <tr>
+                                        <td class="repo-name"><?= htmlspecialchars($entry['app_name']) ?></td>
+                                        <td class="date-text"><?= date('Y-m-d', strtotime($entry['work_date'])) ?></td>
+                                        <td class="hours-text"><?= number_format($entry['duration'], 1) ?></td>
+                                        <td class="description-text">
+                                            <?php if ($entry['description']): ?>
+                                                <?= htmlspecialchars($entry['description']) ?>
+                                            <?php else: ?>
+                                                <span style="color: #CCC;">No description</span>
+                                            <?php endif; ?>
+                                        </td>
+                                        <td>
+                                            <a href="#" class="btn-edit">Edit</a>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                <?php else: ?>
+                    <div class="empty-state">
+                        <p>No entries yet. Start logging your hours!</p>
+                    </div>
+                <?php endif; ?>
+            </div>
+        </div>
     </div>
-    
-    <script>
-        document.getElementById('theme-toggle').addEventListener('click', () => {
-            document.body.classList.toggle('dark-mode');
-        });
-    </script>
+
 </body>
 </html>

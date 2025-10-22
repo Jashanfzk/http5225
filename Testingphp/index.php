@@ -1,17 +1,14 @@
 <?php
 /**
  * BrickMMO Timesheets - Home Page
- * Public repository listing with GitHub API integration (like applications-v1)
+ * Public repository listing with GitHub API integration and database statistics
  */
 
-// Add authentication support
 require_once 'config/config.php';
+require_once 'config/database.php';
 
-// GitHub API Configuration
-$githubUsername = "brickmmo";
+// Pagination setup
 $perPage = 9;
-
-// Get current page from URL parameter
 $currentPage = isset($_GET['page']) ? max(1, intval($_GET['page'])) : 1;
 
 // Get search parameters
@@ -29,25 +26,192 @@ if (!$filterName && !$filterLanguage && !$filterDescription) {
 // Check if user is logged in
 $isLoggedIn = isset($_SESSION['user_id']) && !empty($_SESSION['user_id']);
 
-// Function to fetch all repositories from GitHub
-function fetchAllRepos($username) {
+// GitHub API integration - similar to applications-v1
+function fetchAllGitHubRepos($organization) {
     $allRepos = [];
     $page = 1;
     $headers = [
-        "User-Agent: BrickMMO-WebApp"
+        "User-Agent: BrickMMO-Timesheets",
+        "Accept: application/vnd.github.v3+json"
     ];
     
+    // Add a flag to track if we should show debugging info
+    $debug = true;
+    
+    // Create cache directory path
+    $cache_dir = __DIR__ . '/cache';
+    
+    // Create cache file path using the organization name
+    $cache_file = $cache_dir . '/github_repos_' . $organization . '.json';
+    
+    // Create cache directory if it doesn't exist
+    if (!is_dir($cache_dir)) {
+        if (!mkdir($cache_dir, 0755, true)) {
+            error_log("GitHub API Debug - Failed to create cache directory");
+        }
+    }
+    
+    if (file_exists($cache_file)) {
+        $cache_time = filemtime($cache_file);
+        if (time() - $cache_time < 15 * 60) { // 15 minutes cache
+            if ($debug) {
+                error_log("GitHub API Debug - Using cached repository data");
+            }
+            $cached_data = file_get_contents($cache_file);
+            $repos = json_decode($cached_data, true);
+            if (is_array($repos) && !empty($repos)) {
+                return $repos;
+            }
+        }
+    }
+    
+    // Direct authentication with GitHub OAuth client credentials
+    // This is a basic fallback method using client ID as query parameter
+    $auth_query = "";
+    if (defined('GITHUB_CLIENT_ID') && !empty(GITHUB_CLIENT_ID)) {
+        $auth_query = "client_id=" . GITHUB_CLIENT_ID;
+        
+        // Add client secret if available for higher rate limits
+        if (defined('GITHUB_CLIENT_SECRET') && !empty(GITHUB_CLIENT_SECRET)) {
+            $auth_query .= "&client_secret=" . GITHUB_CLIENT_SECRET;
+        }
+    }
+    
+    // Personal access token has higher priority if available
+    if (defined('GITHUB_TOKEN') && !empty(GITHUB_TOKEN)) {
+        $headers[] = "Authorization: token " . GITHUB_TOKEN;
+        // If using token, don't use client credentials
+        $auth_query = "";
+    }
+    
+    // First, try to get a single repository to debug API access
+    $ch = curl_init();
+    $org_url = "https://api.github.com/orgs/$organization";
+    if (!empty($auth_query)) {
+        $org_url .= "?" . $auth_query;
+    }
+    curl_setopt($ch, CURLOPT_URL, $org_url);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true); // Verify SSL certificate
+    curl_setopt($ch, CURLOPT_TIMEOUT, 10); // Set timeout to 10 seconds
+    $orgResponse = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+    
+    if ($debug) {
+        error_log("GitHub API Debug - Organization check: $organization, Status: $httpCode");
+        error_log("GitHub API Debug - Response: " . substr($orgResponse, 0, 200) . "...");
+    }
+    
+    // If we can't access the organization, try the alternative public repositories endpoint
+    if ($httpCode != 200) {
+        if ($debug) {
+            error_log("GitHub API Debug - Failed to access organization via orgs endpoint, trying public repos");
+        }
+        
+        // Try alternate approach using the users endpoint instead of orgs
+        $alt_ch = curl_init();
+        $alt_url = "https://api.github.com/users/$organization/repos?per_page=100&sort=updated";
+        if (!empty($auth_query)) {
+            $alt_url .= "&" . $auth_query;
+        }
+        
+        curl_setopt($alt_ch, CURLOPT_URL, $alt_url);
+        curl_setopt($alt_ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($alt_ch, CURLOPT_HTTPHEADER, $headers);
+        curl_setopt($alt_ch, CURLOPT_SSL_VERIFYPEER, true);
+        curl_setopt($alt_ch, CURLOPT_TIMEOUT, 10);
+        $alt_response = curl_exec($alt_ch);
+        $alt_httpCode = curl_getinfo($alt_ch, CURLINFO_HTTP_CODE);
+        curl_close($alt_ch);
+        
+        if ($debug) {
+            error_log("GitHub API Debug - Alternative endpoint status: $alt_httpCode");
+            error_log("GitHub API Debug - First 200 chars: " . substr($alt_response, 0, 200));
+        }
+        
+        // If alternative endpoint works, use it
+        if ($alt_httpCode == 200) {
+            $alt_repos = json_decode($alt_response, true);
+            if (is_array($alt_repos) && !empty($alt_repos)) {
+                return $alt_repos;
+            }
+        }
+        
+        // If both approaches fail, return demo repositories
+        if ($debug) {
+            error_log("GitHub API Debug - Both approaches failed, using demo data");
+        }
+        
+        return [
+            [
+                'name' => 'demo-repository',
+                'full_name' => "$organization/demo-repository",
+                'description' => 'Demo repository for testing. GitHub API access issue detected.',
+                'html_url' => "https://github.com/$organization/demo-repository",
+                'language' => 'PHP',
+                'id' => 0,
+                'is_demo' => true
+            ],
+            [
+                'name' => 'another-demo-repo',
+                'full_name' => "$organization/another-demo-repo",
+                'description' => 'Second demo repository for testing. Please check GitHub API access.',
+                'html_url' => "https://github.com/$organization/another-demo-repo",
+                'language' => 'JavaScript',
+                'id' => 1,
+                'is_demo' => true
+            ]
+        ];
+    }
+    
+    // If organization check is successful, proceed with fetching repos
     do {
         $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, "https://api.github.com/users/$username/repos?per_page=100&page=$page");
+        $repos_url = "https://api.github.com/orgs/$organization/repos?per_page=100&page=$page";
+        if (!empty($auth_query)) {
+            $repos_url .= "&" . $auth_query;
+        }
+        
+        curl_setopt($ch, CURLOPT_URL, $repos_url);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 10);
         $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        
+        if ($debug && $page === 1) {
+            error_log("GitHub API Debug - Repos fetch status: $httpCode");
+            error_log("GitHub API Debug - First 200 chars: " . substr($response, 0, 200));
+            
+            // Check for rate limit info
+            $rate_limit = curl_getinfo($ch, CURLINFO_HEADER_OUT);
+            $remaining = @$http_response_header['X-RateLimit-Remaining'] ?? 'Unknown';
+            $limit = @$http_response_header['X-RateLimit-Limit'] ?? 'Unknown';
+            error_log("GitHub API Debug - Rate limits: $remaining/$limit remaining");
+        }
+        
+        // Check for cURL errors
+        if ($response === false) {
+            error_log("cURL Error: " . curl_error($ch));
+            curl_close($ch);
+            return [];
+        }
+        
         curl_close($ch);
         
+        // Decode JSON response
         $repos = json_decode($response, true);
         
-        if (!is_array($repos) || empty($repos)) {
+        // Check if response is valid and an array
+        if (!is_array($repos)) {
+            error_log("GitHub API Error: Invalid response format - " . substr($response, 0, 200));
+            return [];
+        }
+        
+        if (empty($repos)) {
             break;
         }
         
@@ -56,64 +220,256 @@ function fetchAllRepos($username) {
         
     } while (count($repos) === 100);
     
+    if ($debug) {
+        error_log("GitHub API Debug - Total repos fetched: " . count($allRepos));
+    }
+    
+    // Save to cache if we have repositories
+    if (!empty($allRepos)) {
+        if ($debug) {
+            error_log("GitHub API Debug - Saving repositories to cache");
+        }
+        file_put_contents($cache_file, json_encode($allRepos));
+    }
+    
     return $allRepos;
 }
 
-// Function to fetch languages for a repository
-function fetchLanguages($languagesUrl) {
-    $ch = curl_init();
-    curl_setopt($ch, CURLOPT_URL, $languagesUrl);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_HTTPHEADER, ["User-Agent: BrickMMO-WebApp"]);
-    $response = curl_exec($ch);
-    curl_close($ch);
+try {
+    $database = new Database();
+    $db = $database->getConnection();
     
-    $languages = json_decode($response, true);
-    return is_array($languages) ? implode(", ", array_keys($languages)) : "N/A";
-}
-
-// Fetch all repositories
-$allRepos = fetchAllRepos($githubUsername);
-
-// Filter repositories based on search term
-$filteredRepos = $allRepos;
-
-if (!empty($searchTerm)) {
-    $searchTermLower = strtolower($searchTerm);
-    $filteredRepos = array_filter($allRepos, function($repo) use ($searchTermLower, $filterName, $filterLanguage, $filterDescription) {
-        $matches = false;
+    // Check if GitHub organization is defined
+    $organization = defined('GITHUB_ORG') && !empty(GITHUB_ORG) ? GITHUB_ORG : 'BrickMMO';
+    
+    // Feedback for debugging
+    if (isset($_GET['debug']) && $_GET['debug'] === '1') {
+        echo "<div style='padding: 10px; background: #fffae6; border: 1px solid #e6b800; margin-bottom: 20px;'>";
+        echo "<p><strong>GitHub API Debug Mode:</strong> Attempting to connect to $organization organization</p>";
+        echo "<p>For detailed API diagnostics, visit <a href='test-github-api.php'>GitHub API Test Page</a></p>";
+        echo "</div>";
+    }
+    
+    // Fetch all repositories from GitHub API
+    $githubRepos = fetchAllGitHubRepos($organization);
+    
+    // Check if we got valid repositories
+    if (empty($githubRepos)) {
+        error_log("No GitHub repositories returned or error occurred - falling back to database only");
+        $githubRepos = []; // Ensure it's an empty array even if null was returned
         
-        // Search in repository name
-        if ($filterName && stripos($repo['name'], $searchTermLower) !== false) {
-            $matches = true;
+        // If GitHub API fails, we'll create repository objects from database data only
+        if (!empty($dbRepos)) {
+            foreach ($dbRepos as $dbRepo) {
+                // Only include active repositories in fallback mode
+                if ($dbRepo['is_active']) {
+                    $githubRepos[] = [
+                        'name' => $dbRepo['name'],
+                        'full_name' => 'BrickMMO/' . $dbRepo['name'],
+                        'description' => $dbRepo['description'] ?? 'No description available',
+                        'html_url' => 'https://github.com/BrickMMO/' . $dbRepo['name'],
+                        'language' => $dbRepo['primary_language'] ?? 'N/A',
+                        'id' => $dbRepo['id'],
+                        'is_fallback' => true // Mark as fallback data
+                    ];
+                }
+            }
         }
         
-        // Search in primary language
-        if ($filterLanguage && isset($repo['language']) && $repo['language'] && stripos($repo['language'], $searchTermLower) !== false) {
-            $matches = true;
+        // If still no repositories, create demo repositories to avoid empty page
+        if (empty($githubRepos)) {
+            error_log("No repositories found in database either - using demo data");
+            $githubRepos = [
+                [
+                    'name' => 'smart-City-Apps',
+                    'full_name' => 'BrickMMO/smart-City-Apps',
+                    'description' => 'BrickMMO Smart City mobile application collection. Currently showing demo data due to GitHub API connectivity issues.',
+                    'html_url' => 'https://github.com/BrickMMO/smart-city-apps',
+                    'language' => 'Swift',
+                    'id' => 0,
+                    'contributor_count' => 5,
+                    'entry_count' => 25,
+                    'total_hours' => 80,
+                    'is_demo' => true,
+                    'created_at' => '2023-09-15T10:30:00Z',
+                    'updated_at' => '2025-09-01T14:22:10Z'
+                ],
+                [
+                    'name' => 'display-apps',
+                    'full_name' => 'BrickMMO/display-apps',
+                    'description' => 'Applications for BrickMMO interactive displays. Demo placeholder while resolving API connection issues.',
+                    'html_url' => 'https://github.com/BrickMMO/display-apps',
+                    'language' => 'JavaScript',
+                    'id' => 1,
+                    'contributor_count' => 3,
+                    'entry_count' => 18,
+                    'total_hours' => 45,
+                    'is_demo' => true,
+                    'created_at' => '2023-11-10T08:15:22Z',
+                    'updated_at' => '2025-08-20T16:45:30Z'
+                ],
+                [
+                    'name' => 'timesheet-application',
+                    'full_name' => 'BrickMMO/timesheet-application',
+                    'description' => 'BrickMMO contributor time tracking system. Demo repository while we resolve API connectivity.',
+                    'html_url' => 'https://github.com/BrickMMO/timesheet-application',
+                    'language' => 'PHP',
+                    'id' => 2,
+                    'contributor_count' => 8,
+                    'entry_count' => 42,
+                    'total_hours' => 120,
+                    'is_demo' => true,
+                    'created_at' => '2024-01-05T09:20:15Z',
+                    'updated_at' => '2025-10-01T11:30:45Z'
+                ],
+                [
+                    'name' => 'web-dashboard',
+                    'full_name' => 'BrickMMO/web-dashboard',
+                    'description' => 'Web-based dashboard for BrickMMO system management and monitoring. Showing sample data.',
+                    'html_url' => 'https://github.com/BrickMMO/web-dashboard',
+                    'language' => 'TypeScript',
+                    'id' => 3,
+                    'contributor_count' => 6,
+                    'entry_count' => 30,
+                    'total_hours' => 95,
+                    'is_demo' => true,
+                    'created_at' => '2024-03-18T13:40:22Z',
+                    'updated_at' => '2025-09-15T10:20:35Z'
+                ],
+                [
+                    'name' => 'LEGO-api',
+                    'full_name' => 'BrickMMO/LEGO-api',
+                    'description' => 'API for interfacing with LEGO hardware components. Demo repository - check GitHub API connection.',
+                    'html_url' => 'https://github.com/BrickMMO/LEGO-api',
+                    'language' => 'Python',
+                    'id' => 4,
+                    'contributor_count' => 4,
+                    'entry_count' => 22,
+                    'total_hours' => 68,
+                    'is_demo' => true,
+                    'created_at' => '2024-05-22T15:10:05Z',
+                    'updated_at' => '2025-08-30T09:15:40Z'
+                ],
+                [
+                    'name' => 'documentation',
+                    'full_name' => 'BrickMMO/documentation',
+                    'description' => 'Comprehensive documentation for all BrickMMO systems and applications. Demo data shown.',
+                    'html_url' => 'https://github.com/BrickMMO/documentation',
+                    'language' => 'Markdown',
+                    'id' => 5,
+                    'contributor_count' => 10,
+                    'entry_count' => 50,
+                    'total_hours' => 150,
+                    'is_demo' => true,
+                    'created_at' => '2023-08-10T11:25:30Z',
+                    'updated_at' => '2025-10-10T14:50:20Z'
+                ]
+            ];
+        }
+    }
+    
+    // Also get repositories and statistics from database
+    $db_stmt = $db->prepare("
+        SELECT 
+            a.*,
+            COUNT(DISTINCT h.user_id) as contributor_count,
+            COUNT(h.id) as entry_count,
+            SUM(h.duration) as total_hours
+        FROM applications a
+        LEFT JOIN hours h ON a.id = h.application_id
+        GROUP BY a.id
+    ");
+    $db_stmt->execute();
+    $dbRepos = $db_stmt->fetchAll(PDO::FETCH_ASSOC);
+    
+    // Convert database repositories to a lookup array by name
+    $dbReposByName = [];
+    foreach ($dbRepos as $repo) {
+        $dbReposByName[$repo['name']] = $repo;
+    }
+    
+    // Combine GitHub data with database statistics
+    $repositories = [];
+    foreach ($githubRepos as $repo) {
+        // Validate repo data - ensure all expected keys exist
+        if (!isset($repo['name']) || !is_array($repo)) {
+            continue; // Skip invalid repo entries
         }
         
-        // Search in description
-        if ($filterDescription && isset($repo['description']) && $repo['description'] && stripos($repo['description'], $searchTermLower) !== false) {
-            $matches = true;
+        $repoData = [
+            'name' => $repo['name'],
+            'full_name' => $repo['full_name'] ?? $repo['name'],
+            'description' => $repo['description'] ?? 'No description available',
+            'html_url' => $repo['html_url'] ?? '#',
+            'language' => $repo['language'] ?? 'N/A',
+            'created_at' => $repo['created_at'] ?? '',
+            'updated_at' => $repo['updated_at'] ?? '',
+            'github_id' => $repo['id'] ?? 0,
+            // Default values if not in database
+            'contributor_count' => 0,
+            'entry_count' => 0,
+            'total_hours' => 0
+        ];
+        
+        // Add database statistics if available
+        if (isset($dbReposByName[$repo['name']])) {
+            $dbRepo = $dbReposByName[$repo['name']];
+            $repoData['contributor_count'] = $dbRepo['contributor_count'] ?? 0;
+            $repoData['entry_count'] = $dbRepo['entry_count'] ?? 0;
+            $repoData['total_hours'] = $dbRepo['total_hours'] ?? 0;
+            $repoData['id'] = $dbRepo['id']; // Database ID for linking
+            $repoData['is_active'] = $dbRepo['is_active'];
         }
         
-        return $matches;
+        $repositories[] = $repoData;
+    }
+    
+    // Filter repositories based on search term
+    if (!empty($searchTerm)) {
+        $searchTermLower = strtolower($searchTerm);
+        $repositories = array_filter($repositories, function($repo) use ($searchTermLower, $filterName, $filterLanguage, $filterDescription) {
+            $matches = false;
+            
+            if ($filterName && stripos($repo['name'], $searchTermLower) !== false) {
+                $matches = true;
+            }
+            
+            if ($filterLanguage && isset($repo['language']) && stripos($repo['language'], $searchTermLower) !== false) {
+                $matches = true;
+            }
+            
+            if ($filterDescription && isset($repo['description']) && stripos($repo['description'], $searchTermLower) !== false) {
+                $matches = true;
+            }
+            
+            return $matches;
+        });
+        
+        // Re-index array
+        $repositories = array_values($repositories);
+    }
+    
+    // Sort repositories by name
+    usort($repositories, function($a, $b) {
+        return strcmp($a['name'], $b['name']);
     });
     
-    // Re-index array
-    $filteredRepos = array_values($filteredRepos);
+    // Calculate pagination
+    $totalRepos = count($repositories);
+    $totalPages = (int) ceil($totalRepos / $perPage);
+    if ($totalPages < 1) { $totalPages = 1; }
+    $currentPage = min($currentPage, $totalPages);
+    
+    // Get repositories for current page
+    $offset = ($currentPage - 1) * $perPage;
+    $repositories = array_slice($repositories, $offset, $perPage);
+    
+} catch (Exception $e) {
+    error_log("Index page error: " . $e->getMessage());
+    $repositories = [];
+    $totalRepos = 0;
+    $totalPages = 1;
 }
-
-// Calculate pagination
-$totalRepos = count($filteredRepos);
-$totalPages = (int) ceil($totalRepos / $perPage);
-if ($totalPages < 1) { $totalPages = 1; }
-$currentPage = min($currentPage, $totalPages); // Ensure valid page
-
-// Get repositories for current page
-$start = ($currentPage - 1) * $perPage;
-$repositories = array_slice($filteredRepos, $start, $perPage);
 
 // Function to highlight search terms
 function highlightSearchTerm($text, $searchTerm) {
@@ -127,14 +483,13 @@ function highlightSearchTerm($text, $searchTerm) {
 
 // Build query string for pagination
 function buildQueryString($params, $exclude = []) {
-  $filtered = [];
-  foreach ($params as $k => $v) {
-    if (in_array($k, $exclude, true)) continue;
-    if ($v === null || $v === '') continue;
-    $filtered[$k] = $v;
-  }
-
-  return !empty($filtered) ? '?' . http_build_query($filtered) : '';
+    $filtered = [];
+    foreach ($params as $k => $v) {
+        if (in_array($k, $exclude, true)) continue;
+        if ($v === null || $v === '') continue;
+        $filtered[$k] = $v;
+    }
+    return !empty($filtered) ? '?' . http_build_query($filtered) : '';
 }
 
 $baseQuery = [
@@ -222,28 +577,85 @@ $baseQuery = [
     <main>
         <section id="applications">
             <!-- Results Info -->
-            <div id="search-info" style="display: <?php echo !empty($searchTerm) ? 'block' : 'none'; ?>;">
-                <p id="search-results-text">Found <?php echo $totalRepos; ?> repositories matching "<?php echo htmlspecialchars($searchTerm); ?>"</p>
+            <div id="search-info" style="margin-bottom: 20px; padding: 10px 15px; background-color: <?php echo !empty($searchTerm) ? '#e3f2fd' : 'transparent'; ?>; border-radius: 8px; display: <?php echo !empty($searchTerm) || (isset($githubRepos) && array_key_exists(0, $githubRepos) && isset($githubRepos[0]['is_demo'])) ? 'block' : 'none'; ?>;">
+                <?php if (!empty($searchTerm)): ?>
+                    <p id="search-results-text" style="margin: 0; font-size: 16px;"><i class="fas fa-search" style="margin-right: 8px; color: #3498db;"></i> Found <strong><?php echo $totalRepos; ?></strong> repositories matching "<strong><?php echo htmlspecialchars($searchTerm); ?></strong>"</p>
+                <?php elseif (isset($githubRepos) && array_key_exists(0, $githubRepos) && isset($githubRepos[0]['is_demo'])): ?>
+                    <p style="margin: 0; font-size: 16px; color: #e67e22;"><i class="fas fa-exclamation-triangle" style="margin-right: 8px;"></i> <strong>Note:</strong> Currently showing demo data due to GitHub API connection issues. Please try again later.</p>
+                <?php endif; ?>
             </div>
             
             <div class="applications-container" id="repo-container">
                 <?php if (empty($repositories)): ?>
-                    <p><?php echo !empty($searchTerm) ? 'No repositories found matching your search criteria.' : 'No repositories available.'; ?></p>
+                    <div class="error-message" style="text-align: center; padding: 40px; background-color: #fff3f3; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); width: 100%; max-width: 600px; margin: 0 auto;">
+                        <img src="./assets/placeholder.png" alt="No repositories" style="width: 120px; height: auto; margin-bottom: 20px;">
+                        <h3 style="margin-bottom: 15px; color: #e74c3c; font-size: 24px;">No Repositories Found</h3>
+                        <p style="font-size: 16px; margin-bottom: 15px;"><?php echo !empty($searchTerm) ? 'No repositories match your search criteria "' . htmlspecialchars($searchTerm) . '".' : 'Unable to retrieve repositories at this time.'; ?></p>
+                        <p style="margin-top: 10px; font-size: 14px; color: #666;">This could be due to GitHub API limitations or connectivity issues.</p>
+                        <div style="margin-top: 25px;">
+                            <button onclick="window.location.reload()" class="button-app-info" style="margin-right: 10px;">Refresh Page</button>
+                            <button onclick="window.location.href='index.php'" class="button-app-github">Clear Search</button>
+                        </div>
+                    </div>
                 <?php else: ?>
                     <?php foreach ($repositories as $repo): ?>
                         <?php
-                          $languages = fetchLanguages($repo['languages_url']);
                           $repoName = highlightSearchTerm($repo['name'], $searchTerm);
                           $repoDescription = highlightSearchTerm($repo['description'] ?? 'No description available', $searchTerm);
-                          $repoLanguages = highlightSearchTerm($languages, $searchTerm);
+                          $repoLanguage = highlightSearchTerm($repo['language'] ?? 'N/A', $searchTerm);
+                          $isDemoRepo = isset($repo['is_demo']) && $repo['is_demo'];
+                          $isFallback = isset($repo['is_fallback']) && $repo['is_fallback'];
+                          
+                          // Set special styling for demo/fallback repos
+                          $cardStyle = "";
+                          $ribbonClass = "";
+                          $ribbonText = "";
+                          
+                          if ($isDemoRepo) {
+                              $cardStyle = "box-shadow: 0 0 0 2px #e74c3c;";
+                              $ribbonClass = "demo-ribbon";
+                              $ribbonText = "Demo";
+                          } elseif ($isFallback) {
+                              $cardStyle = "box-shadow: 0 0 0 2px #f39c12;";
+                              $ribbonClass = "fallback-ribbon";
+                              $ribbonText = "Database Only";
+                          }
                         ?>
-                        <div class="app-card">
-                            <h3 class="card-title"><?php echo $repoName; ?></h3>
-                            <p class="app-description"><?php echo $repoDescription; ?></p>
-                            <p><strong>Languages:</strong> <?php echo $repoLanguages; ?></p>
-                            <div class="card-buttons-container">
-                                <button class="button-app-info" onclick="window.open('<?php echo htmlspecialchars($repo['html_url']); ?>', '_blank')">GitHub</button>
-                                <button class="button-app-github" onclick="window.location.href='repository.php?repo=<?php echo urlencode($repo['name']); ?>'">View Details</button>
+                        <div class="app-card" style="<?php echo $cardStyle; ?> position: relative; overflow: hidden; display: flex; flex-direction: column; height: 100%;">
+                            <?php if ($isDemoRepo || $isFallback): ?>
+                                <div class="<?php echo $ribbonClass; ?>" style="position: absolute; top: 10px; right: -30px; transform: rotate(45deg); background: <?php echo $isDemoRepo ? '#e74c3c' : '#f39c12'; ?>; color: white; padding: 5px 30px; font-size: 10px; font-weight: bold;"><?php echo $ribbonText; ?></div>
+                            <?php endif; ?>
+                            
+                            <div class="card-content" style="flex: 1; display: flex; flex-direction: column;">
+                                <h3 class="card-title"><?php echo $repoName; ?></h3>
+                                <p class="app-description" style="flex-grow: 1; min-height: 60px;"><?php echo $repoDescription; ?></p>
+                                <p><strong>Language:</strong> <span class="language-badge" style="display: inline-block; padding: 2px 8px; background-color: #f0f0f0; border-radius: 4px; font-size: 12px;"><?php echo $repoLanguage; ?></span></p>
+                                
+                                <div style="display: flex; justify-content: center; margin: 15px 0; padding: 5px 0; font-size: 13px; color: #333; text-align: center;">
+                                    <div style="flex: 1; display: flex; flex-direction: column; align-items: center; padding: 5px 0;">
+                                        <strong style="display: block; font-size: 16px; margin-bottom: 3px;"><?php echo number_format($repo['total_hours'] ?? 0, 0); ?></strong>
+                                        <span style="font-size: 12px; color: #666;">hours</span>
+                                    </div>
+                                    <div style="flex: 1; display: flex; flex-direction: column; align-items: center; padding: 5px 0; border-left: 1px solid rgba(0,0,0,0.05); border-right: 1px solid rgba(0,0,0,0.05);">
+                                        <strong style="display: block; font-size: 16px; margin-bottom: 3px;"><?php echo $repo['contributor_count'] ?? 0; ?></strong>
+                                        <span style="font-size: 12px; color: #666;">contributors</span>
+                                    </div>
+                                    <div style="flex: 1; display: flex; flex-direction: column; align-items: center; padding: 5px 0;">
+                                        <strong style="display: block; font-size: 16px; margin-bottom: 3px;"><?php echo $repo['entry_count'] ?? 0; ?></strong>
+                                        <span style="font-size: 12px; color: #666;">entries</span>
+                                    </div>
+                                </div>
+                                
+                                <?php if ($isDemoRepo): ?>
+                                    <div style="margin-top: 15px; padding: 8px; background-color: #fff3f3; border-radius: 4px; font-size: 0.9rem;">
+                                        <p style="color: #e74c3c; margin: 0;"><i class="fas fa-exclamation-circle" style="margin-right: 5px;"></i> Demo repository - GitHub API connection issue</p>
+                                    </div>
+                                <?php endif; ?>
+                            </div>
+                            
+                            <div class="card-buttons-container" style="margin-top: auto; padding-top: 15px;">
+                                <button class="button-app-info" onclick="window.open('<?php echo htmlspecialchars($repo['html_url']); ?>', '_blank')"><i class="fab fa-github" style="margin-right: 5px;"></i> GitHub</button>
+                                <button class="button-app-github" onclick="window.location.href='repository.php?repo=<?php echo urlencode($repo['name']); ?>'"><i class="fas fa-info-circle" style="margin-right: 5px;"></i> View Details</button>
                             </div>
                         </div>
                     <?php endforeach; ?>
@@ -287,7 +699,7 @@ $baseQuery = [
     <script src="https://cdn.brickmmo.com/bar@1.0.0/bar.js"></script>
     <script>
         // Auto-submit form when checkboxes change
-        document.querySelectorAll('.search-filters input[type="checkbox"]').forEach(function(checkbox) {
+        document.querySelectorAll('input[type="checkbox"]').forEach(function(checkbox) {
             checkbox.addEventListener('change', function() {
                 document.getElementById('search-form').submit();
             });

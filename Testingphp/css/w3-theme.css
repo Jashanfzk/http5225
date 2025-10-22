@@ -251,3 +251,44 @@
 .border-brickmmo {
     border-color: var(--brickmmo-primary) !important;
 }
+
+/* --- Additions for Applications header and Dashboard layout (from mock) --- */
+.brick-orange{color:#DD5A3A!important}
+.bg-brick{background:#F3E9E5!important}
+.brick-card{border-radius:.5rem}
+
+.brick-btn{background:#DD5A3A;color:#fff!important;font-weight:600;border-radius:.5rem;transition:background .3s}
+.brick-btn:hover{background:#c74d2e!important}
+.btn-secondary{background:#4b5563;color:#fff!important;font-weight:600;border-radius:.5rem;transition:background .3s}
+.btn-secondary:hover{background:#374151!important}
+
+.stats-grid{display:flex;gap:1.5rem;margin-bottom:2rem;flex-wrap:wrap}
+.stats-card{background:#F9F9F9;padding:1rem;border-radius:.5rem;text-align:center;flex:1;min-width:150px}
+.stats-num{font-size:1.5rem;font-weight:700;margin-top:.5rem}
+.text-subtext{color:#666;font-size:.875rem;font-weight:500}
+
+.avatar{border-radius:50%;width:2.5rem;height:2.5rem;margin-right:1rem}
+.avatar-lg{width:3rem;height:3rem}
+
+.contributor-item{background:#F9F9F9;padding:1rem;border-radius:.5rem;margin-bottom:1rem;display:flex;align-items:center;justify-content:space-between}
+.contributor-left{display:flex;align-items:center}
+.contributor-name{font-weight:500}
+.contributor-hours{font-weight:700;color:#DD5A3A}
+
+.form-label{display:block;font-size:.875rem;font-weight:500;color:#666;margin-bottom:.25rem}
+.form-input{width:100%;padding:.5rem .75rem;border:1px solid #d1d5db;border-radius:.375rem;font-size:.875rem;transition:border-color .3s,box-shadow .3s}
+.form-input:focus{outline:none;border-color:#DD5A3A;box-shadow:0 0 0 3px rgba(221,90,58,.1)}
+
+.dashboard-grid{display:grid;grid-template-columns:1fr;gap:2rem}
+@media(min-width:1024px){.dashboard-grid{grid-template-columns:1fr 2fr}}
+.contribution-box{border:2px dashed #d1d5db;border-radius:.5rem;padding:2rem;text-align:center;display:flex;flex-direction:column;justify-content:center;align-items:center;min-height:200px}
+
+.user-info{display:flex;align-items:center;margin-bottom:1.5rem}
+.user-details{text-align:left}
+.user-name{font-weight:700;margin-bottom:.25rem}
+.logout-link{color:#DD5A3A;text-decoration:none;font-size:.875rem}
+.logout-link:hover{text-decoration:underline}
+
+.section-title{font-size:1.875rem;font-weight:700;color:#DD5A3A;margin:0 0 .5rem 0}
+.section-subtitle{color:#666;margin-bottom:1.5rem}
+.subsection-title{font-size:1.25rem;font-weight:700;margin-bottom:1rem}
