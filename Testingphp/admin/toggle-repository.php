@@ -1,56 +1,40 @@
 <?php
 /**
- * Toggle Repository Status
- * AJAX endpoint to enable/disable repositories
+ * Toggle repository is_active status (AJAX / POST endpoint)
  */
-
-require_once '../config/config.php';
-require_once '../config/database.php';
-
-// Require admin access
-requireAdmin();
-
-// Only allow POST requests
-if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    http_response_code(405);
-    echo json_encode(['error' => 'Method not allowed']);
-    exit;
+require_once __DIR__ . '/../config/config.php';
+require_once __DIR__ . '/../config/database.php';
+if (session_status() !== PHP_SESSION_ACTIVE) {
+    session_start();
 }
+header('Content-Type: application/json');
 
-// Validate CSRF token
-if (!validateCSRFToken($_POST['csrf_token'] ?? '')) {
+if (!isset($_SESSION['is_admin']) || $_SESSION['is_admin'] !== true) {
     http_response_code(403);
-    echo json_encode(['error' => 'Invalid CSRF token']);
+    echo json_encode(['success' => false, 'message' => 'unauthorized']);
     exit;
 }
 
-$repo_id = intval($_POST['repo_id'] ?? 0);
-$status = intval($_POST['status'] ?? 0);
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    echo json_encode(['success' => false, 'message' => 'invalid_method']);
+    exit;
+}
 
-if ($repo_id <= 0 || !in_array($status, [0, 1])) {
-    http_response_code(400);
-    echo json_encode(['error' => 'Invalid parameters']);
+$repoId = isset($_POST['repo_id']) ? (int) $_POST['repo_id'] : 0;
+$status = isset($_POST['status']) && $_POST['status'] === '1' ? 1 : 0;
+
+if ($repoId <= 0) {
+    echo json_encode(['success' => false, 'message' => 'invalid_id']);
     exit;
 }
 
 try {
-    $database = new Database();
-    $db = $database->getConnection();
-    
-    // Update repository status
-    $stmt = $db->prepare("UPDATE applications SET is_active = ? WHERE id = ?");
-    $result = $stmt->execute([$status, $repo_id]);
-    
-    if ($result) {
-        echo json_encode(['success' => true, 'message' => 'Repository status updated successfully']);
-    } else {
-        http_response_code(500);
-        echo json_encode(['error' => 'Failed to update repository status']);
-    }
-    
+    $db = (new Database())->getConnection();
+    $stmt = $db->prepare('UPDATE applications SET is_active = ?, updated_at = NOW() WHERE id = ?');
+    $ok = $stmt->execute([$status, $repoId]);
+    echo json_encode(['success' => (bool) $ok]);
 } catch (Exception $e) {
-    error_log("Toggle repository error: " . $e->getMessage());
     http_response_code(500);
-    echo json_encode(['error' => 'Database error']);
+    echo json_encode(['success' => false, 'message' => $e->getMessage()]);
 }
-?>
+

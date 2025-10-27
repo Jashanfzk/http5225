@@ -87,4 +87,50 @@ function requireAdmin() {
         redirect(BASE_URL . 'index.php?error=access_denied');
     }
 }
+
+// Database Connection
+try {
+    // First connect without database selection
+    $connection = mysqli_connect(DB_HOST, DB_USER, DB_PASS);
+    
+    if (!$connection) {
+        throw new Exception("Database connection failed: " . mysqli_connect_error());
+    }
+    
+    // Create database if not exists
+    $create_db_query = "CREATE DATABASE IF NOT EXISTS " . DB_NAME;
+    if (!mysqli_query($connection, $create_db_query)) {
+        throw new Exception("Failed to create database: " . mysqli_error($connection));
+    }
+    
+    // Select the database
+    if (!mysqli_select_db($connection, DB_NAME)) {
+        throw new Exception("Failed to select database: " . mysqli_error($connection));
+    }
+    
+    // Create repositories table with all required fields
+    $create_table_query = "
+        CREATE TABLE IF NOT EXISTS repositories (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            name VARCHAR(255) NOT NULL UNIQUE,
+            url VARCHAR(255) NOT NULL,
+            description TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )";
+    
+    if (!mysqli_query($connection, $create_table_query)) {
+        throw new Exception("Failed to create table: " . mysqli_error($connection));
+    }
+    
+    // Set charset to ensure proper encoding
+    mysqli_set_charset($connection, 'utf8mb4');
+    
+} catch (Exception $e) {
+    if (DEVELOPMENT) {
+        die("Connection error: " . $e->getMessage());
+    } else {
+        die("A database error occurred. Please try again later.");
+    }
+}
+
 ?>

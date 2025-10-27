@@ -26,44 +26,47 @@ if (!$filterName && !$filterLanguage && !$filterDescription) {
 // Check if user is logged in
 $isLoggedIn = isset($_SESSION['user_id']) && !empty($_SESSION['user_id']);
 
-// GitHub API integration - similar to applications-v1
-function fetchAllGitHubRepos($organization) {
-    $allRepos = [];
-    $page = 1;
+// GitHub API integration - fetch BrickMMO repositories
+function fetchAllGitHubRepos() {
+    $url = "https://api.github.com/users/brickmmo/repos";
     $headers = [
         "User-Agent: BrickMMO-Timesheets",
         "Accept: application/vnd.github.v3+json"
     ];
     
-    // Add a flag to track if we should show debugging info
-    $debug = true;
+    $ch = curl_init($url);
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_HTTPHEADER => $headers,
+        CURLOPT_SSL_VERIFYPEER => true,
+        CURLOPT_TIMEOUT => 10
+    ]);
     
-    // Create cache directory path
-    $cache_dir = __DIR__ . '/cache';
+    $response = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
     
-    // Create cache file path using the organization name
-    $cache_file = $cache_dir . '/github_repos_' . $organization . '.json';
-    
-    // Create cache directory if it doesn't exist
-    if (!is_dir($cache_dir)) {
-        if (!mkdir($cache_dir, 0755, true)) {
-            error_log("GitHub API Debug - Failed to create cache directory");
+    if ($httpCode === 200) {
+        $repos = json_decode($response, true);
+        if (is_array($repos)) {
+            // Sort repositories by name
+            usort($repos, function($a, $b) {
+                return strcmp($a['name'], $b['name']);
+            });
+            return $repos;
         }
     }
     
-    if (file_exists($cache_file)) {
-        $cache_time = filemtime($cache_file);
-        if (time() - $cache_time < 15 * 60) { // 15 minutes cache
-            if ($debug) {
-                error_log("GitHub API Debug - Using cached repository data");
-            }
-            $cached_data = file_get_contents($cache_file);
-            $repos = json_decode($cached_data, true);
-            if (is_array($repos) && !empty($repos)) {
-                return $repos;
-            }
-        }
-    }
+    // If API call fails, return demo repositories
+    return [
+        [
+            'name' => 'Demo Repository',
+            'description' => 'GitHub API connection issue. Please try again later.',
+            'html_url' => 'https://github.com/BrickMMO',
+            'language' => 'N/A',
+            'is_demo' => true
+        ]
+    ];
     
     // Direct authentication with GitHub OAuth client credentials
     // This is a basic fallback method using client ID as query parameter
@@ -586,11 +589,15 @@ $baseQuery = [
             </div>
             
             <div class="applications-container" id="repo-container">
-                <?php if (empty($repositories)): ?>
+                <?php 
+                // Fetch repositories from GitHub API
+                $repositories = fetchAllGitHubRepos();
+                
+                if (empty($repositories)): ?>
                     <div class="error-message" style="text-align: center; padding: 40px; background-color: #fff3f3; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); width: 100%; max-width: 600px; margin: 0 auto;">
                         <img src="./assets/placeholder.png" alt="No repositories" style="width: 120px; height: auto; margin-bottom: 20px;">
                         <h3 style="margin-bottom: 15px; color: #e74c3c; font-size: 24px;">No Repositories Found</h3>
-                        <p style="font-size: 16px; margin-bottom: 15px;"><?php echo !empty($searchTerm) ? 'No repositories match your search criteria "' . htmlspecialchars($searchTerm) . '".' : 'Unable to retrieve repositories at this time.'; ?></p>
+                        <p style="font-size: 16px; margin-bottom: 15px;">Unable to retrieve repositories at this time.</p>
                         <p style="margin-top: 10px; font-size: 14px; color: #666;">This could be due to GitHub API limitations or connectivity issues.</p>
                         <div style="margin-top: 25px;">
                             <button onclick="window.location.reload()" class="button-app-info" style="margin-right: 10px;">Refresh Page</button>
@@ -600,62 +607,45 @@ $baseQuery = [
                 <?php else: ?>
                     <?php foreach ($repositories as $repo): ?>
                         <?php
-                          $repoName = highlightSearchTerm($repo['name'], $searchTerm);
-                          $repoDescription = highlightSearchTerm($repo['description'] ?? 'No description available', $searchTerm);
-                          $repoLanguage = highlightSearchTerm($repo['language'] ?? 'N/A', $searchTerm);
+                          $repoName = $repo['name'];
+                          $repoDescription = $repo['description'] ?? 'No description available';
+                          $repoLanguage = $repo['language'] ?? 'N/A';
                           $isDemoRepo = isset($repo['is_demo']) && $repo['is_demo'];
-                          $isFallback = isset($repo['is_fallback']) && $repo['is_fallback'];
                           
-                          // Set special styling for demo/fallback repos
-                          $cardStyle = "";
-                          $ribbonClass = "";
-                          $ribbonText = "";
-                          
-                          if ($isDemoRepo) {
-                              $cardStyle = "box-shadow: 0 0 0 2px #e74c3c;";
-                              $ribbonClass = "demo-ribbon";
-                              $ribbonText = "Demo";
-                          } elseif ($isFallback) {
-                              $cardStyle = "box-shadow: 0 0 0 2px #f39c12;";
-                              $ribbonClass = "fallback-ribbon";
-                              $ribbonText = "Database Only";
-                          }
+                          // Set special styling for demo repos
+                          $cardStyle = $isDemoRepo ? "box-shadow: 0 0 0 2px #e74c3c;" : "";
                         ?>
                         <div class="app-card" style="<?php echo $cardStyle; ?> position: relative; overflow: hidden; display: flex; flex-direction: column; height: 100%;">
-                            <?php if ($isDemoRepo || $isFallback): ?>
-                                <div class="<?php echo $ribbonClass; ?>" style="position: absolute; top: 10px; right: -30px; transform: rotate(45deg); background: <?php echo $isDemoRepo ? '#e74c3c' : '#f39c12'; ?>; color: white; padding: 5px 30px; font-size: 10px; font-weight: bold;"><?php echo $ribbonText; ?></div>
+                            <?php if ($isDemoRepo): ?>
+                                <div class="demo-ribbon" style="position: absolute; top: 10px; right: -30px; transform: rotate(45deg); background: #e74c3c; color: white; padding: 5px 30px; font-size: 10px; font-weight: bold;">Demo</div>
                             <?php endif; ?>
                             
                             <div class="card-content" style="flex: 1; display: flex; flex-direction: column;">
-                                <h3 class="card-title"><?php echo $repoName; ?></h3>
-                                <p class="app-description" style="flex-grow: 1; min-height: 60px;"><?php echo $repoDescription; ?></p>
-                                <p><strong>Language:</strong> <span class="language-badge" style="display: inline-block; padding: 2px 8px; background-color: #f0f0f0; border-radius: 4px; font-size: 12px;"><?php echo $repoLanguage; ?></span></p>
+                                <h3 class="card-title"><?php echo htmlspecialchars($repoName); ?></h3>
+                                <p class="app-description" style="flex-grow: 1; min-height: 60px;"><?php echo htmlspecialchars($repoDescription); ?></p>
+                                
+                                <p><strong>Language:</strong> <span class="language-badge" style="display: inline-block; padding: 2px 8px; background-color: #f0f0f0; border-radius: 4px; font-size: 12px;"><?php echo htmlspecialchars($repoLanguage); ?></span></p>
                                 
                                 <div style="display: flex; justify-content: center; margin: 15px 0; padding: 5px 0; font-size: 13px; color: #333; text-align: center;">
                                     <div style="flex: 1; display: flex; flex-direction: column; align-items: center; padding: 5px 0;">
-                                        <strong style="display: block; font-size: 16px; margin-bottom: 3px;"><?php echo number_format($repo['total_hours'] ?? 0, 0); ?></strong>
+                                        <strong style="display: block; font-size: 16px; margin-bottom: 3px;">0</strong>
                                         <span style="font-size: 12px; color: #666;">hours</span>
                                     </div>
                                     <div style="flex: 1; display: flex; flex-direction: column; align-items: center; padding: 5px 0; border-left: 1px solid rgba(0,0,0,0.05); border-right: 1px solid rgba(0,0,0,0.05);">
-                                        <strong style="display: block; font-size: 16px; margin-bottom: 3px;"><?php echo $repo['contributor_count'] ?? 0; ?></strong>
+                                        <strong style="display: block; font-size: 16px; margin-bottom: 3px;">0</strong>
                                         <span style="font-size: 12px; color: #666;">contributors</span>
                                     </div>
                                     <div style="flex: 1; display: flex; flex-direction: column; align-items: center; padding: 5px 0;">
-                                        <strong style="display: block; font-size: 16px; margin-bottom: 3px;"><?php echo $repo['entry_count'] ?? 0; ?></strong>
+                                        <strong style="display: block; font-size: 16px; margin-bottom: 3px;">0</strong>
                                         <span style="font-size: 12px; color: #666;">entries</span>
                                     </div>
                                 </div>
                                 
-                                <?php if ($isDemoRepo): ?>
-                                    <div style="margin-top: 15px; padding: 8px; background-color: #fff3f3; border-radius: 4px; font-size: 0.9rem;">
-                                        <p style="color: #e74c3c; margin: 0;"><i class="fas fa-exclamation-circle" style="margin-right: 5px;"></i> Demo repository - GitHub API connection issue</p>
-                                    </div>
-                                <?php endif; ?>
                             </div>
                             
                             <div class="card-buttons-container" style="margin-top: auto; padding-top: 15px;">
                                 <button class="button-app-info" onclick="window.open('<?php echo htmlspecialchars($repo['html_url']); ?>', '_blank')"><i class="fab fa-github" style="margin-right: 5px;"></i> GitHub</button>
-                                <button class="button-app-github" onclick="window.location.href='repository.php?repo=<?php echo urlencode($repo['name']); ?>'"><i class="fas fa-info-circle" style="margin-right: 5px;"></i> View Details</button>
+                                <button class="button-app-github" onclick="window.location.href='applications-v1/repo_details.php?repo=<?php echo urlencode($repo['name']); ?>'"><i class="fas fa-info-circle" style="margin-right: 5px;"></i> View Details</button>
                             </div>
                         </div>
                     <?php endforeach; ?>

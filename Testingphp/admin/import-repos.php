@@ -1,5 +1,68 @@
 <?php
 /**
+ * Admin: Import repositories from GitHub organization and upsert into applications table
+ * Protect this endpoint - only admins should access it.
+ */
+require_once __DIR__ . '/../config/config.php';
+require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/../applications-v1/lib/github_helper.php';
+
+if (session_status() !== PHP_SESSION_ACTIVE) {
+    session_start();
+}
+
+// Basic admin-check (adjust to your auth system)
+if (!isset($_SESSION['is_admin']) || $_SESSION['is_admin'] !== true) {
+    // Helpful guidance when unauthorized during development
+    http_response_code(403);
+    echo 'Forbidden - admin only. For development you can temporarily enable admin by setting $_SESSION["is_admin"] = true in admin/import-repos.php (remove after use).';
+    exit;
+}
+
+$db = (new Database())->getConnection();
+$org = defined('GITHUB_ORG') ? GITHUB_ORG : 'BrickMMO';
+
+$imported = 0;
+$page = 1;
+// fetch pages of repos
+do {
+    $url = "https://api.github.com/orgs/" . urlencode($org) . "/repos?per_page=100&page={$page}&type=all";
+    $repos = github_request_cached($url, 900, false);
+    if (!is_array($repos) || empty($repos)) break;
+
+    $stmt = $db->prepare("INSERT INTO applications (name, description, html_url, primary_language, is_active, created_at, updated_at) VALUES (:name, :description, :html_url, :language, 1, NOW(), NOW()) ON DUPLICATE KEY UPDATE description = VALUES(description), html_url = VALUES(html_url), primary_language = VALUES(primary_language), updated_at = NOW()");
+
+    foreach ($repos as $r) {
+        if (!isset($r['name'])) continue;
+        $stmt->execute([
+            ':name' => $r['name'],
+            ':description' => $r['description'] ?? '',
+            ':html_url' => $r['html_url'] ?? '',
+            ':language' => $r['language'] ?? null
+        ]);
+        $imported++;
+    }
+
+    $page++;
+} while (count($repos) === 100);
+
+// Simple UI feedback
+?>
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Import Repositories</title>
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body style="max-width:900px;margin:40px auto;padding:0 20px">
+    <h1>Import Repositories</h1>
+    <p>Imported/Updated: <strong><?php echo (int)$imported; ?></strong> repositories from org <strong><?php echo htmlspecialchars($org); ?></strong>.</p>
+    <p><a href="dashboard.php">Back to Admin Dashboard</a></p>
+</body>
+</html>
+<?php
+/**
  * Import Repositories from GitHub
  * Fetches all BrickMMO repositories and imports them to the database
  */

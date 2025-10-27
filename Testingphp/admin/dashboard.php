@@ -1,5 +1,167 @@
 <?php
 /**
+ * Admin Dashboard (server-side only)
+ * - Shows applications with aggregated timesheet stats
+ * - Allows toggling is_active via regular POST forms (no AJAX)
+ * - Links to import-repos.php to refresh applications from GitHub
+ */
+require_once __DIR__ . '/../config/config.php';
+require_once __DIR__ . '/../config/database.php';
+if (session_status() !== PHP_SESSION_ACTIVE) {
+    session_start();
+}
+
+// If a logged-in user requests to become admin (development helper)
+if (isset($_POST['become_admin'])) {
+    // Require login first
+    if (!function_exists('isLoggedIn') || !isLoggedIn()) {
+        $_SESSION['flash'] = ['type' => 'error', 'message' => 'You must be signed in to become admin.'];
+        header('Location: dashboard.php');
+        exit;
+    }
+
+    try {
+        $db = (new Database())->getConnection();
+        $stmt = $db->prepare('UPDATE users SET is_admin = 1 WHERE id = ?');
+        $stmt->execute([$_SESSION['user_id']]);
+        // Mark session as admin
+        $_SESSION['is_admin'] = true;
+        $_SESSION['flash'] = ['type' => 'success', 'message' => 'Your account has been granted admin privileges.'];
+    } catch (Exception $e) {
+        $_SESSION['flash'] = ['type' => 'error', 'message' => 'Database error: ' . $e->getMessage()];
+    }
+
+    header('Location: dashboard.php');
+    exit;
+}
+
+// Toggle handling (server-side form)
+if (isset($_POST['action']) && $_POST['action'] === 'toggle' && isset($_POST['repo_id'])) {
+    if (!isset($_SESSION['is_admin']) || $_SESSION['is_admin'] !== true) {
+        $flash = ['type' => 'error', 'message' => 'Unauthorized'];
+    } else {
+        $repoId = (int) $_POST['repo_id'];
+        $newStatus = isset($_POST['status']) && $_POST['status'] === '1' ? 1 : 0;
+        try {
+            $db = (new Database())->getConnection();
+            $stmt = $db->prepare('UPDATE applications SET is_active = ?, updated_at = NOW() WHERE id = ?');
+            $ok = $stmt->execute([$newStatus, $repoId]);
+            $flash = ['type' => $ok ? 'success' : 'error', 'message' => $ok ? 'Repository status updated.' : 'Failed to update.'];
+        } catch (Exception $e) {
+            $flash = ['type' => 'error', 'message' => 'DB error: ' . $e->getMessage()];
+        }
+    }
+    // Redirect to avoid form resubmission
+    $_SESSION['flash'] = $flash;
+    header('Location: dashboard.php');
+    exit;
+}
+
+// Admin check
+$isAdmin = isset($_SESSION['is_admin']) && $_SESSION['is_admin'] === true;
+
+// Render page
+?><!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Admin Dashboard - BrickMMO</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <style>
+    .container{max-width:1100px;margin:28px auto;padding:0 18px}
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:8px;border:1px solid #eee;text-align:left}
+    .actions form{display:inline}
+    .flash{padding:10px;border-radius:6px;margin-bottom:12px}
+    .flash.success{background:#e6ffed;border:1px solid #9fe2b6}
+    .flash.error{background:#ffe6e6;border:1px solid #f3a6a6}
+  </style>
+</head>
+<body>
+<div class="container">
+  <h1>Admin Dashboard</h1>
+
+  <?php if (!empty($_SESSION['flash'])): $f = $_SESSION['flash']; unset($_SESSION['flash']); ?>
+    <div class="flash <?php echo htmlspecialchars($f['type']); ?>"><?php echo htmlspecialchars($f['message']); ?></div>
+  <?php endif; ?>
+
+  <?php if (!$isAdmin): ?>
+    <p>You are not signed in as admin.</p>
+        <form method="post">
+            <button name="become_admin" type="submit">Make my account admin</button>
+        </form>
+    <p>Or sign in via the real admin login (not implemented here).</p>
+  <?php else: ?>
+
+    <p>
+      <a href="import-repos.php" class="button-app-info">Run Import (GitHub → applications table)</a>
+      &nbsp;
+      <a href="../applications-v1/index.php" class="button-app-github">View Public Applications</a>
+    </p>
+
+    <?php
+      // Fetch aggregated stats per application
+      try {
+          $db = (new Database())->getConnection();
+          $sql = "SELECT a.id, a.name, a.primary_language, a.is_active,
+                    COALESCE(SUM(h.duration),0) AS total_hours,
+                    COALESCE(COUNT(h.id),0) AS entry_count,
+                    COALESCE(COUNT(DISTINCT h.user_id),0) AS contributor_count
+                  FROM applications a
+                  LEFT JOIN hours h ON a.id = h.application_id
+                  GROUP BY a.id
+                  ORDER BY a.is_active DESC, a.name ASC";
+          $rows = $db->query($sql)->fetchAll(PDO::FETCH_ASSOC);
+      } catch (Exception $e) {
+          $rows = [];
+      }
+    ?>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Repository</th>
+          <th>Language</th>
+          <th>Hours</th>
+          <th>Contributors</th>
+          <th>Entries</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+      <?php if (empty($rows)): ?>
+        <tr><td colspan="7">No applications found. Run import to populate.</td></tr>
+      <?php else: foreach ($rows as $r): ?>
+        <tr>
+          <td><?php echo htmlspecialchars($r['name']); ?></td>
+          <td><?php echo htmlspecialchars($r['primary_language'] ?? 'N/A'); ?></td>
+          <td><?php echo number_format($r['total_hours'],2); ?></td>
+          <td><?php echo (int)$r['contributor_count']; ?></td>
+          <td><?php echo (int)$r['entry_count']; ?></td>
+          <td><?php echo $r['is_active'] ? 'Active' : 'Inactive'; ?></td>
+          <td class="actions">
+            <form method="post" style="display:inline">
+              <input type="hidden" name="action" value="toggle">
+              <input type="hidden" name="repo_id" value="<?php echo (int)$r['id']; ?>">
+              <input type="hidden" name="status" value="<?php echo $r['is_active'] ? '0' : '1'; ?>">
+              <button type="submit"><?php echo $r['is_active'] ? 'Disable' : 'Enable'; ?></button>
+            </form>
+            <a href="../applications-v1/repo_details.php?repo=<?php echo urlencode($r['name']); ?>">Details</a>
+          </td>
+        </tr>
+      <?php endforeach; endif; ?>
+      </tbody>
+    </table>
+
+  <?php endif; ?>
+
+</div>
+</body>
+</html>
+<?php
+/**
  * Admin Dashboard
  * Repository management and system analytics
  */
@@ -105,6 +267,10 @@ try {
                     <a class="text-subtext-light dark:text-subtext-dark hover:text-primary dark:hover:text-primary transition-colors font-medium" href="import-repos.php">Import Repos</a>
                     <a class="text-subtext-light dark:text-subtext-dark hover:text-primary dark:hover:text-primary transition-colors font-medium" href="../github-token-setup.php">GitHub Token</a>
                     <a class="text-subtext-light dark:text-subtext-dark hover:text-primary dark:hover:text-primary transition-colors font-medium" href="../auth/logout.php">Logout</a>
+                    <!-- Development helper: upgrade the currently logged-in account to admin -->
+                    <form method="post" style="display:inline;margin:0;padding:0">
+                        <button name="become_admin" type="submit" class="text-subtext-light dark:text-subtext-dark hover:text-primary dark:hover:text-primary transition-colors font-medium" title="Make your account an admin">Make my account admin</button>
+                    </form>
                     <button class="text-subtext-light dark:text-subtext-dark hover:text-primary dark:hover:text-primary transition-colors" id="theme-toggle">
                         <span class="material-icons">brightness_6</span>
                     </button>

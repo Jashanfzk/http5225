@@ -19,10 +19,117 @@ try {
     $user_stmt->execute([$_SESSION['user_id']]);
     $user = $user_stmt->fetch();
     
-    // Get active applications
-    $apps_stmt = $db->prepare("SELECT * FROM applications WHERE is_active = 1 ORDER BY name ASC");
-    $apps_stmt->execute();
-    $applications = $apps_stmt->fetchAll();
+    // Function to get all BrickMMO repositories
+    function fetchGitHubRepos() {
+        // List of all known BrickMMO repositories
+        $repositories = [
+            ['name' => '.github', 'type' => 'Organization README.md file'],
+            ['name' => 'api-v1', 'type' => 'The core API for the BrickMMO network'],
+            ['name' => 'applications-v1', 'type' => 'BrickMMO Applications Directory'],
+            ['name' => 'assets', 'type' => 'BrickMMO Assets Directory'],
+            ['name' => 'bmcli', 'type' => 'BrickMMO CLI tool'],
+            ['name' => 'bmos-api-v1', 'type' => 'A temporary API for BMOS'],
+            ['name' => 'bmos-core-v1', 'type' => 'BrickMMO OS in Python'],
+            ['name' => 'bmos-core-v1-dev', 'type' => 'Development version of BMOS Core'],
+            ['name' => 'branding-brickmmo', 'type' => 'BrickMMO Branding Guidelines'],
+            ['name' => 'brickframe', 'type' => 'Framework for BrickMMO'],
+            ['name' => 'codes', 'type' => 'BrickMMO Codes'],
+            ['name' => 'cms', 'type' => 'BrickMMO CMS'],
+            ['name' => 'community', 'type' => 'BrickMMO Community'],
+            ['name' => 'console', 'type' => 'BrickMMO Console'],
+            ['name' => 'docs', 'type' => 'Documentation'],
+            ['name' => 'flow', 'type' => 'BrickMMO Flow'],
+            ['name' => 'home', 'type' => 'BrickMMO Home'],
+            ['name' => 'inventory', 'type' => 'BrickMMO Inventory'],
+            ['name' => 'lego', 'type' => 'LEGO Info'],
+            ['name' => 'panel', 'type' => 'BrickMMO Panel'],
+            ['name' => 'sorting', 'type' => 'BrickMMO Sorting'],
+            ['name' => 'status', 'type' => 'BrickMMO Status'],
+            ['name' => 'support', 'type' => 'BrickMMO Support'],
+            ['name' => 'timesheets', 'type' => 'BrickMMO Timesheets'],
+            ['name' => 'website', 'type' => 'BrickMMO Website']
+        ];
+        
+        // Sort repositories alphabetically
+        usort($repositories, function($a, $b) {
+            return strcmp($a['name'], $b['name']);
+        });
+        
+        return $repositories;
+        
+        if ($httpCode === 200) {
+            $repos = json_decode($response, true);
+            if (is_array($repos)) {
+                // Sort repositories by name
+                usort($repos, function($a, $b) {
+                    return strcmp($a['name'], $b['name']);
+                });
+                
+                // Log all found repositories
+                $repoList = "Found " . count($repos) . " repositories:\n";
+                foreach ($repos as $repo) {
+                    $repoList .= "- " . $repo['name'] . "\n";
+                }
+                file_put_contents(__DIR__ . '/fetch_log.txt', $repoList, FILE_APPEND);
+                
+                // Add missing repositories if they're not in the API response
+                $knownRepos = [
+                    '.github',
+                    'api-v1',
+                    'applications-v1',
+                    'assets',
+                    'bmcli',
+                    'bmos-api-v1',
+                    'bmos-core-v1',
+                    'branding-brickmmo'
+                ];
+                
+                $existingRepoNames = array_column($repos, 'name');
+                foreach ($knownRepos as $knownRepo) {
+                    if (!in_array($knownRepo, $existingRepoNames)) {
+                        $repos[] = [
+                            'name' => $knownRepo,
+                            'html_url' => "https://github.com/BrickMMO/" . $knownRepo,
+                            'description' => 'Repository information not available'
+                        ];
+                    }
+                }
+                
+                // Sort again after adding any missing repos
+                usort($repos, function($a, $b) {
+                    return strcmp($a['name'], $b['name']);
+                });
+                
+                return $repos;
+            }
+        }
+        
+        // If API call fails, return known repositories
+        $fallbackRepos = [
+            '.github',
+            'api-v1',
+            'applications-v1',
+            'assets',
+            'bmcli',
+            'bmos-api-v1',
+            'bmos-core-v1',
+            'branding-brickmmo'
+        ];
+        
+        $repos = [];
+        foreach ($fallbackRepos as $name) {
+            $repos[] = [
+                'name' => $name,
+                'html_url' => "https://github.com/BrickMMO/" . $name,
+                'description' => 'Repository information not available'
+            ];
+        }
+        
+        return $repos;
+    }
+    
+    // Get repositories from GitHub
+    $applications = fetchGitHubRepos();
     
     // Process form submission
     $message = '';
@@ -231,6 +338,23 @@ try {
             font-size: 0.95rem;
             font-family: inherit;
             transition: border-color 0.2s;
+            background-color: white;
+        }
+        
+        select.form-control {
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 1rem center;
+            background-size: 1em;
+            padding-right: 2.5rem;
+        }
+        
+        select.form-control option {
+            padding: 0.5rem;
+            font-size: 0.95rem;
         }
         
         .form-control:focus {
@@ -443,8 +567,9 @@ try {
                         <select class="form-control" id="application_id" name="application_id" required>
                             <option value="">Select a repository...</option>
                             <?php foreach ($applications as $app): ?>
-                                <option value="<?= $app['id'] ?>" <?= (isset($_POST['application_id']) && $_POST['application_id'] == $app['id']) ? 'selected' : '' ?>>
-                                    <?= htmlspecialchars($app['name']) ?>
+                                <option value="<?= htmlspecialchars($app['name']) ?>"
+                                        <?= (isset($_POST['application_id']) && $_POST['application_id'] == $app['name']) ? 'selected' : '' ?>>
+                                    <?= strtoupper(htmlspecialchars($app['name'])) ?>
                                 </option>
                             <?php endforeach; ?>
                         </select>
