@@ -28,15 +28,42 @@ curl_close($ch);
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BrickMMO Repositories</title>
     <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #FDF6F3;
+        }
         .repo-list {
             max-width: 800px;
             margin: 0 auto;
+            padding: 2rem 1rem;
+        }
+        .header-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid #E8D5CF;
+        }
+        .sync-button {
+            display: inline-block;
+            padding: 0.75rem 1.5rem;
+            background: #DD5A3A;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 600;
+            transition: background 0.2s;
+        }
+        .sync-button:hover {
+            background: #C44A2A;
         }
         .repo-item {
             margin: 20px 0;
             padding: 15px;
             border: 1px solid #ddd;
             border-radius: 5px;
+            background: white;
         }
         .contributors-list {
             margin-top: 10px;
@@ -54,11 +81,27 @@ curl_close($ch);
             border-radius: 50%;
             vertical-align: middle;
         }
+        .info-box {
+            background: #E8F4F8;
+            padding: 1rem;
+            border-radius: 6px;
+            margin-bottom: 1.5rem;
+            border-left: 4px solid #0366d6;
+        }
     </style>
 </head>
 <body>
     <div class="repo-list">
-        <h1>BrickMMO Repositories</h1>
+        <div class="header-section">
+            <h1 style="margin: 0;">BrickMMO Repositories</h1>
+            <a href="sync-to-applications.php" class="sync-button">
+                🔄 Sync to Dashboard
+            </a>
+        </div>
+        
+        <div class="info-box">
+            <strong>📌 Note:</strong> After fetching repositories, click "Sync to Dashboard" to make them available in the timesheet dashboard dropdown.
+        </div>
         
         <?php
         if ($httpCode === 200) {
