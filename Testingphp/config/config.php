@@ -33,8 +33,8 @@ define('SESSION_TIMEOUT', 3600); // 1 hour
 
 // GitHub API Configuration
 define('GITHUB_API_BASE', 'https://api.github.com');
-define('GITHUB_ORG', 'BrickMMO');
-define('GITHUB_TOKEN', ''); // Add your personal access token here if needed to avoid rate limiting
+define('GITHUB_ORG', 'brickmmo');
+define('GITHUB_TOKEN', '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'); // Add your personal access token here if needed to avoid rate limiting
 
 // Application Settings
 define('ITEMS_PER_PAGE', 8);
@@ -83,6 +83,21 @@ function requireLogin() {
 
 function requireAdmin() {
     requireLogin();
+    // If session doesn't know admin yet, refresh from DB once
+    if (!isset($_SESSION['is_admin']) || !$_SESSION['is_admin']) {
+        try {
+            require_once __DIR__ . '/database.php';
+            $db = (new Database())->getConnection();
+            $stmt = $db->prepare('SELECT is_admin FROM users WHERE id = ?');
+            $stmt->execute([$_SESSION['user_id']]);
+            $row = $stmt->fetch();
+            if ($row && (int)$row['is_admin'] === 1) {
+                $_SESSION['is_admin'] = true;
+            }
+        } catch (Exception $e) {
+            // Ignore and fall through to redirect below
+        }
+    }
     if (!isset($_SESSION['is_admin']) || !$_SESSION['is_admin']) {
         redirect(BASE_URL . 'index.php?error=access_denied');
     }
