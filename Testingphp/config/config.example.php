@@ -1,7 +1,9 @@
 <?php
 /**
- * Application Configuration
+ * Application Configuration Example
  * BrickMMO Timesheets Management System
+ * 
+ * Copy this file to config.php and fill in your actual values
  */
 
 // Start session if not already started
@@ -16,9 +18,9 @@ define('APP_VERSION', '1.0.0');
 define('BASE_URL', 'http://localhost/http5225/Testingphp/');
 
 // GitHub OAuth Configuration
-// TODO: Replace with your actual GitHub OAuth App credentials
-define('GITHUB_CLIENT_ID', 'Ov23liSoXSEVRlA3Zk6e'); // Your actual GitHub OAuth Client ID
-define('GITHUB_CLIENT_SECRET', 'c2cf4a7a05b3d01b8d818fd4ef02116ac0e10697'); // Replace with real client secret
+// Get these from: https://github.com/settings/applications/new
+define('GITHUB_CLIENT_ID', 'YOUR_GITHUB_CLIENT_ID_HERE');
+define('GITHUB_CLIENT_SECRET', 'YOUR_GITHUB_CLIENT_SECRET_HERE');
 define('GITHUB_REDIRECT_URI', BASE_URL . 'auth/callback.php');
 
 // Database Configuration
@@ -34,7 +36,7 @@ define('SESSION_TIMEOUT', 3600); // 1 hour
 // GitHub API Configuration
 define('GITHUB_API_BASE', 'https://api.github.com');
 define('GITHUB_ORG', 'BrickMMO');
-define('GITHUB_TOKEN', ''); // Add your personal access token here if needed to avoid rate limiting
+define('GITHUB_TOKEN', ''); // Optional: Add your personal access token here if needed to avoid rate limiting
 
 // Application Settings
 define('ITEMS_PER_PAGE', 8);
@@ -158,3 +160,4 @@ try {
 }
 
 ?>
+

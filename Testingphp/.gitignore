@@ -1,0 +1,21 @@
+# Configuration files with secrets
+config/config.php
+
+# Environment files
+.env
+.env.local
+
+# Cache and temporary files
+cache/
+*.log
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
