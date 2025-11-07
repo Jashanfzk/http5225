@@ -1,0 +1,765 @@
+/* General Styles */
+@import url('https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap');
+
+body {
+    font-family: 'Lato', sans-serif;
+    background-color: #f5f5f5;
+    color: #333;
+    margin: 0;
+    padding: 0;
+    text-align: center;
+    position: relative;
+    line-height: 1.6;
+}
+
+/* Header */
+header {
+    background-color: #fff;
+    padding: 15px 30px;
+    text-align: center;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.logo img {
+    width: 80px;
+}
+
+h1 {
+    color: #ff5b00;
+    font-size: 32px;
+    margin: 10px 0;
+    font-weight: 700;
+}
+
+.description {
+    font-size: 16px;
+    color: #848484;
+}
+
+/* Return Button */
+.return-btn {
+    display: inline-block;
+    text-decoration: none;
+    color: #ff5b00;
+    font-weight: 600;
+    padding: 10px 20px;
+    border: 2px solid #ff5b00;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    background-color: transparent;
+}
+
+.return-btn:hover {
+    background-color: #ff5b00;
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(255, 91, 0, 0.2);
+}
+
+/* GitHub Button */
+.github-btn {
+    display: inline-block;
+    background-color: #ff5b00;
+    color: white;
+    padding: 12px 24px;
+    text-decoration: none;
+    border-radius: 8px;
+    font-weight: 600;
+    margin-top: 15px;
+    width: auto;
+    min-width: 150px;
+    text-align: center;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(255, 91, 0, 0.2);
+}
+
+.github-btn:hover {
+    background-color: #d94a00;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(255, 91, 0, 0.3);
+}
+
+/* Interactive Buttons */
+.interactive-btn {
+    background-color: #28a745;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    cursor: pointer;
+    margin-left: 10px;
+    transition: all 0.3s ease;
+}
+
+.interactive-btn:hover {
+    background-color: #218838;
+    transform: translateY(-1px);
+}
+
+.interactive-btn i {
+    margin-right: 5px;
+}
+
+/* Repository Card */
+#repo-card {
+    max-width: 1200px;
+    width: 100%;
+    background-color: #ffffff;
+    margin: 30px auto;
+    padding: 40px;
+    border-radius: 12px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 30px;
+    flex-wrap: wrap;
+    border: 1px solid #e0e0e0;
+}
+
+.repo-image {
+    flex-shrink: 0;
+    width: 300px;
+    height: auto;
+}
+
+.repo-image img {
+    width: 100%;
+    height: auto;
+    object-fit: cover;
+    border-radius: 10px;
+    background-color: #ddd;
+}
+
+.repo-info {
+    flex: 1;
+    text-align: left;
+}
+
+.repo-info h2 {
+    margin: 0 0 10px 0;
+    color: #1a1a1a;
+    font-size: 28px;
+    font-weight: 700;
+}
+
+.repo-info p {
+    color: #666;
+    font-size: 16px;
+    line-height: 1.6;
+}
+
+/* Repository Details */
+#repo-details {
+    margin-top: 25px;
+    padding: 20px;
+    background: #f9f9f9;
+    border-radius: 8px;
+    border-left: 4px solid #ff5b00;
+}
+
+#repo-details h3 {
+    color: #1a1a1a;
+    font-size: 20px;
+    margin-bottom: 15px;
+    font-weight: 600;
+}
+
+#repo-details ul {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+}
+
+#repo-details li {
+    margin: 12px 0;
+    font-size: 15px;
+    line-height: 1.6;
+}
+
+#repo-details strong {
+    font-weight: 600;
+    color: #1a1a1a;
+    display: inline-block;
+    min-width: 120px;
+}
+
+#repo-details span {
+    color: #555;
+}
+
+/* Contributors Styling */
+#contributors-list {
+    margin-top: 10px;
+}
+
+.contributor-item {
+    display: flex;
+    align-items: center;
+    margin: 8px 0;
+    padding: 8px;
+    background: #f8f9fa;
+    border-radius: 5px;
+    transition: background-color 0.3s ease;
+}
+
+.contributor-item:hover {
+    background: #e9ecef;
+}
+
+.contributor-avatar {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    margin-right: 10px;
+    border: 2px solid #ff5b00;
+}
+
+.contributor-link {
+    color: #ff5b00;
+    text-decoration: none;
+    font-weight: bold;
+    margin-right: 10px;
+}
+
+.contributor-link:hover {
+    color: #ea5302;
+}
+
+.contribution-count {
+    color: #666;
+    font-size: 12px;
+}
+
+/* Issues Container */
+.issues-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    margin-top: 10px;
+}
+
+.issue-stat {
+    display: flex;
+    align-items: center;
+    padding: 8px 12px;
+    background: #e3f2fd;
+    border-radius: 5px;
+    border-left: 4px solid #2196f3;
+}
+
+.issue-stat.bug {
+    background: #ffebee;
+    border-left-color: #f44336;
+}
+
+.issue-stat.good-first {
+    background: #e8f5e8;
+    border-left-color: #4caf50;
+}
+
+.issue-stat i {
+    margin-right: 8px;
+    width: 16px;
+}
+
+.issue-stat span {
+    font-size: 13px;
+    font-weight: 600;
+}
+
+/* README Section */
+#readme-section {
+    max-width: 1200px;
+    width: 100%;
+    margin: 30px auto;
+    background: #fff;
+    padding: 40px;
+    border-radius: 12px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    text-align: left;
+    border: 1px solid #e0e0e0;
+}
+
+#readme-section h3 {
+    color: #ff5b00;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #f0f0f0;
+    font-weight: 600;
+}
+
+.readme-content {
+    line-height: 1.6;
+    color: #333;
+}
+
+.readme-content h1 {
+    color: #ff5b00;
+    font-size: 24px;
+    margin: 20px 0 10px 0;
+}
+
+.readme-content h2 {
+    color: #333;
+    font-size: 20px;
+    margin: 18px 0 8px 0;
+}
+
+.readme-content h3 {
+    color: #333;
+    font-size: 16px;
+    margin: 16px 0 6px 0;
+}
+
+.readme-content pre {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 5px;
+    overflow-x: auto;
+    border-left: 4px solid #ff5b00;
+}
+
+/* Modal Styles */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.5);
+    animation: fadeIn 0.3s;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.modal-content {
+    background-color: #fff;
+    margin: 5% auto;
+    padding: 0;
+    border-radius: 10px;
+    width: 80%;
+    max-width: 800px;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    animation: slideDown 0.3s;
+}
+
+@keyframes slideDown {
+    from { transform: translateY(-50px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+.modal-header {
+    background: linear-gradient(135deg, #ff5b00, #ea5302);
+    color: white;
+    padding: 20px;
+    border-radius: 10px 10px 0 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-header h3 {
+    margin: 0;
+    font-size: 18px;
+}
+
+.close {
+    color: white;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: color 0.3s;
+}
+
+.close:hover {
+    color: #ffcccb;
+}
+
+.modal-body {
+    padding: 30px;
+}
+
+/* Chart Container */
+#languageChart, #commitChart {
+    max-width: 100%;
+    height: 400px;
+}
+
+/* Commit Details */
+#commit-details {
+    margin-top: 30px;
+}
+
+.contributor-commits {
+    margin-bottom: 25px;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border-left: 4px solid #ff5b00;
+}
+
+.contributor-commits h4 {
+    color: #ff5b00;
+    margin: 0 0 15px 0;
+    font-size: 16px;
+}
+
+.recent-commits {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.commit-item {
+    display: flex;
+    gap: 15px;
+    padding: 8px 12px;
+    background: white;
+    border-radius: 5px;
+    border-left: 3px solid #28a745;
+}
+
+.commit-date {
+    font-size: 12px;
+    color: #666;
+    font-weight: bold;
+    min-width: 80px;
+}
+
+.commit-message {
+    color: #333;
+    font-size: 13px;
+    flex: 1;
+}
+
+/* Footer */
+footer {
+    background-color: #fff;
+    padding: 30px 20px;
+    font-size: 14px;
+    color: #666;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    margin-top: 50px;
+    border-top: 1px solid #e0e0e0;
+}
+
+/* Social Icons */
+.social-icons {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    margin-bottom: 10px;
+}
+
+.social-icons a {
+    text-decoration: none;
+    font-size: 20px;
+    transition: transform 0.3s ease;
+}
+
+.social-icons a:hover {
+    transform: scale(1.2);
+}
+
+.fa-brands, .fab {
+    font-size: 22px;
+}
+
+.fa-instagram {
+    color: rgb(218, 119, 135);
+}
+
+.fa-youtube {
+    color: red;
+}
+
+.fa-twitter {
+    color: black;
+}
+
+.fa-github {
+    color: black;
+}
+
+.fa-tiktok {
+    color: black;
+}
+
+/* Accordion Styles - Themed to match website */
+.accordion {
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: none;
+    background: none;
+    margin-bottom: 30px;
+}
+.accordion-item {
+    background: #ffffff;
+    margin-bottom: 15px;
+    border-radius: 10px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    border: 1px solid #e0e0e0;
+}
+.accordion-item:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    transform: translateY(-2px);
+}
+.accordion-header {
+    width: 100%;
+    background: #ffffff;
+    color: #333;
+    border: none;
+    outline: none;
+    padding: 20px 28px;
+    text-align: left;
+    font-size: 18px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    transition: all 0.3s ease;
+    font-family: 'Lato', sans-serif;
+    border-radius: 10px;
+}
+.accordion-header:hover {
+    background: #f9f9f9;
+    color: #ff5b00;
+}
+.accordion-header.active {
+    background: #ff5b00;
+    color: white;
+    border-radius: 10px 10px 0 0;
+}
+.accordion-header i {
+    margin-right: 10px;
+    font-size: 16px;
+}
+.accordion-icon {
+    font-size: 18px;
+    margin-left: 10px;
+    color: #666;
+    transition: all 0.3s ease;
+}
+.accordion-header:hover .accordion-icon {
+    color: #ff5b00;
+}
+.accordion-header.active .accordion-icon {
+    color: white;
+    transform: rotate(180deg);
+}
+.accordion-body {
+    padding: 30px;
+    background: #fafafa;
+    display: none;
+    animation: fadeInAccordion 0.3s;
+    border-radius: 0 0 10px 10px;
+    border-top: 2px solid #ff5b00;
+}
+@keyframes fadeInAccordion {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+    #repo-card, #readme-section {
+        max-width: 90%;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+
+    .repo-image {
+        width: 80%;
+        max-width: 400px;
+    }
+
+    .repo-info {
+        text-align: center;
+    }
+
+    #repo-details {
+        text-align: center;
+    }
+
+    .return-btn {
+        margin-top: 15px;
+    }
+
+    #graphs-section {
+        max-width: 95% !important;
+    }
+
+    .accordion-header {
+        padding: 18px 20px;
+        font-size: 16px;
+    }
+
+    .accordion-body {
+        padding: 20px;
+    }
+
+    .modal-content {
+        width: 95%;
+        margin: 2% auto;
+    }
+
+    .issues-container {
+        justify-content: center;
+    }
+}
+
+@media (max-width: 768px) {
+    header {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    #repo-card, #readme-section {
+        padding: 20px;
+        max-width: 95%;
+    }
+
+    #graphs-section {
+        max-width: 95% !important;
+    }
+
+    .accordion-header {
+        padding: 15px 18px;
+        font-size: 15px;
+    }
+
+    .accordion-body {
+        padding: 18px;
+    }
+
+    .repo-image {
+        width: 100%;
+    }
+
+    .contributor-item {
+        flex-direction: column;
+        text-align: center;
+        gap: 5px;
+    }
+
+    .commit-item {
+        flex-direction: column;
+        gap: 5px;
+    }
+
+    .commit-date {
+        min-width: auto;
+    }
+
+    .modal-body {
+        padding: 20px;
+    }
+
+    #languageChart, #commitChart {
+        height: 300px;
+    }
+
+    .logo img {
+        margin-bottom: 10px;
+    }
+
+    .social-icons {
+        justify-content: center;
+    }
+}
+
+@media (max-width: 480px) {
+    h1 {
+        font-size: 22px;
+    }
+
+    .description {
+        font-size: 14px;
+    }
+
+    .repo-info h2 {
+        font-size: 18px;
+    }
+
+    .repo-info p {
+        font-size: 14px;
+    }
+
+    .github-btn {
+        width: 100%;
+    }
+
+    .return-btn {
+        padding: 8px 12px;
+    }
+
+    .social-icons a {
+        font-size: 18px;
+    }
+
+    .interactive-btn {
+        display: block;
+        width: 100%;
+        margin: 5px 0;
+    }
+
+    .issues-container {
+        flex-direction: column;
+    }
+
+    #graphs-section {
+        max-width: 98% !important;
+    }
+
+    .accordion-header {
+        padding: 12px 15px;
+        font-size: 14px;
+    }
+
+    .accordion-body {
+        padding: 15px;
+    }
+
+    .modal-content {
+        width: 98%;
+        max-height: 95vh;
+    }
+
+    .modal-header {
+        padding: 15px;
+    }
+
+    .modal-body {
+        padding: 15px;
+    }
+
+    #languageChart, #commitChart {
+        height: 250px;
+    }
+
+    footer p {
+        font-size: 12px;
+    }
+}

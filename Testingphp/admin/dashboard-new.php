@@ -5,12 +5,41 @@
  */
 require_once __DIR__ . '/../config/config.php';
 require_once __DIR__ . '/../config/database.php';
-require_once __DIR__ . '/../lib/GitHubImport.php';
 if (session_status() !== PHP_SESSION_ACTIVE) {
     session_start();
 }
-// Enforce admin role for this page (no dev-mode elevation)
-requireAdmin();
+
+// If a logged-in user requests to become admin (only for Jashanpreet Singh Gill)
+if (isset($_POST['become_admin'])) {
+    if (!function_exists('isLoggedIn') || !isLoggedIn()) {
+        $_SESSION['flash'] = ['type' => 'error', 'message' => 'You must be signed in to become admin.'];
+        header('Location: dashboard-new.php');
+        exit;
+    }
+
+    try {
+        $db = (new Database())->getConnection();
+        // Check if user is Jashanpreet Singh Gill
+        $stmt = $db->prepare('SELECT name FROM users WHERE id = ?');
+        $stmt->execute([$_SESSION['user_id']]);
+        $user = $stmt->fetch();
+        
+        if ($user && isset($user['name']) && $user['name'] === 'Jashanpreet Singh Gill') {
+            // Only allow Jashanpreet Singh Gill to grant admin access
+            $updateStmt = $db->prepare('UPDATE users SET is_admin = 1 WHERE id = ?');
+            $updateStmt->execute([$_SESSION['user_id']]);
+            $_SESSION['is_admin'] = true;
+            $_SESSION['flash'] = ['type' => 'success', 'message' => 'Admin privileges granted!'];
+        } else {
+            $_SESSION['flash'] = ['type' => 'error', 'message' => 'Access denied. Only authorized users can grant admin access.'];
+        }
+    } catch (Exception $e) {
+        $_SESSION['flash'] = ['type' => 'error', 'message' => 'Database error: ' . $e->getMessage()];
+    }
+
+    header('Location: dashboard-new.php');
+    exit;
+}
 
 // Toggle handling (server-side form)
 if (isset($_POST['action']) && $_POST['action'] === 'toggle' && isset($_POST['repo_id'])) {
@@ -33,142 +62,234 @@ if (isset($_POST['action']) && $_POST['action'] === 'toggle' && isset($_POST['re
     exit;
 }
 
-// Admin check
-$isAdmin = isset($_SESSION['is_admin']) && $_SESSION['is_admin'] === true;
-
-// Handle Import from GitHub (also allow GET during development for troubleshooting)
-if ($isAdmin && (isset($_POST['import_repos']) || isset($_GET['import_repos']) || isset($_GET['do_import']))) {
-    error_log("=== IMPORT STARTED === isAdmin: " . ($isAdmin ? 'true' : 'false'));
+// Admin check - Only allow Jashanpreet Singh Gill
+$isAdmin = false;
+if (isset($_SESSION['user_id'])) {
     try {
         $db = (new Database())->getConnection();
-        $login = GITHUB_ORG;
-        // Use the reusable importer
-        $result = GitHubImporter::importUserRepos($db, $login);
-        // Store debug logs and result for display
-        $_SESSION['import_logs'] = $result['logs'] ?? [];
-        $_SESSION['import_result'] = [
-            'fail' => false,
-            'imported' => (int)$result['imported'],
-            'updated'  => (int)$result['updated'],
-            'total'    => (int)$result['total']
-        ];
-        $_SESSION['flash'] = ['type' => 'success', 'message' => 'Import completed! Imported ' . $result['imported'] . ' new. Updated ' . $result['updated'] . '. Total: ' . $result['total'] . ' repositories.'];
-        // No redirect - stay on page to see console logs and notification
-     
+        $stmt = $db->prepare('SELECT name FROM users WHERE id = ?');
+        $stmt->execute([$_SESSION['user_id']]);
+        $user = $stmt->fetch();
+        
+        // Only allow Jashanpreet Singh Gill
+        if ($user && isset($user['name']) && $user['name'] === 'Jashanpreet Singh Gill') {
+            // Auto-grant admin access
+            $updateStmt = $db->prepare('UPDATE users SET is_admin = 1 WHERE id = ?');
+            $updateStmt->execute([$_SESSION['user_id']]);
+            $_SESSION['is_admin'] = true;
+            $isAdmin = true;
+        } else {
+            // Not authorized - redirect
+            $_SESSION['flash'] = ['type' => 'error', 'message' => 'Access denied. Only authorized administrators can access this page.'];
+            header('Location: ../index.php?error=access_denied');
+            exit;
+        }
+    } catch (Exception $e) {
+        error_log("Admin check error: " . $e->getMessage());
+        header('Location: ../index.php?error=access_denied');
+        exit;
+    }
+} else {
+    // Not logged in - redirect
+    header('Location: ../index.php?error=access_denied');
+    exit;
+}
+
+// Handle Import from GitHub
+if ($isAdmin && isset($_POST['import_repos'])) {
+    try {
+        $db = (new Database())->getConnection();
+        
+        // Fetch repositories from GitHub API
+        $headers = ["User-Agent: BrickMMO-Timesheets"];
+        
+        function fetchGitHubData($url, $headers) {
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, $url);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+            $response = curl_exec($ch);
+            $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            curl_close($ch);
+            
+            if ($http_code !== 200) {
+                throw new Exception("GitHub API returned HTTP $http_code");
+            }
+            
+            return json_decode($response, true);
+        }
+        
+        // Fetch organization repositories
+        $repos_url = "https://api.github.com/orgs/" . GITHUB_ORG . "/repos?per_page=100&sort=name";
+        $repositories_data = fetchGitHubData($repos_url, $headers);
+        
+        if (empty($repositories_data)) {
+            $_SESSION['flash'] = ['type' => 'error', 'message' => 'No repositories found for organization ' . GITHUB_ORG];
+        } else {
+            $imported_count = 0;
+            $updated_count = 0;
+            
+            foreach ($repositories_data as $repo) {
+                try {
+                    // Check if repository already exists
+                    $check_stmt = $db->prepare("SELECT id FROM applications WHERE github_id = ?");
+                    $check_stmt->execute([$repo['id']]);
+                    $existing = $check_stmt->fetch();
+                    
+                    $visibility = isset($repo['private']) && $repo['private'] === true ? 'private' : 'public';
+                    $primary_language = $repo['language'] ?? 'N/A';
+                    
+                    if ($existing) {
+                        // Update existing repository
+                        $update_stmt = $db->prepare("
+                            UPDATE applications SET 
+                                name = ?, 
+                                full_name = ?, 
+                                description = ?, 
+                                html_url = ?, 
+                                clone_url = ?, 
+                                language = ?, 
+                                visibility = ?,
+                                updated_at = CURRENT_TIMESTAMP
+                            WHERE github_id = ?
+                        ");
+                        
+                        $update_stmt->execute([
+                            $repo['name'],
+                            $repo['full_name'],
+                            $repo['description'],
+                            $repo['html_url'],
+                            $repo['clone_url'],
+                            $primary_language,
+                            $visibility,
+                            $repo['id']
+                        ]);
+                        
+                        $updated_count++;
+                    } else {
+                        // Insert new repository
+                        $insert_stmt = $db->prepare("
+                            INSERT INTO applications (github_id, name, full_name, description, html_url, clone_url, language, languages, visibility, is_active) 
+                            VALUES (?, ?, ?, ?, ?, ?, ?, '{}', ?, 1)
+                        ");
+                        
+                        $insert_stmt->execute([
+                            $repo['id'],
+                            $repo['name'],
+                            $repo['full_name'],
+                            $repo['description'],
+                            $repo['html_url'],
+                            $repo['clone_url'],
+                            $primary_language,
+                            $visibility
+                        ]);
+                        
+                        $imported_count++;
+                    }
+                } catch (Exception $e) {
+                    error_log("Repository import error for {$repo['name']}: " . $e->getMessage());
+                }
+            }
+            
+            $message = "Import completed! ";
+            if ($imported_count > 0) {
+                $message .= "Imported $imported_count new repositories. ";
+            }
+            if ($updated_count > 0) {
+                $message .= "Updated $updated_count existing repositories.";
+            }
+            
+            $_SESSION['flash'] = ['type' => 'success', 'message' => $message];
+        }
+        
     } catch (Exception $e) {
         error_log("Import error: " . $e->getMessage());
         $_SESSION['flash'] = ['type' => 'error', 'message' => 'Import failed: ' . $e->getMessage()];
-        $_SESSION['import_logs'] = $_SESSION['import_logs'] ?? [];
-        $_SESSION['import_logs'][] = 'Exception: ' . $e->getMessage();
-        $_SESSION['import_result'] = ['fail' => true, 'reason' => ($e->getMessage() ?: 'Import failed')];
     }
-    // No redirect: render the page so you can see console logs and alerts
+    
+    header('Location: dashboard-new.php');
+    exit;
 }
 
 // Get search parameter
 $searchTerm = isset($_GET['search']) ? trim($_GET['search']) : '';
+
+// Get filter parameter (visible/not_visible or null for all)
+// Default to 'visible' if no filter is specified
+$filter = isset($_GET['filter']) ? $_GET['filter'] : 'visible';
+if ($filter === 'visible') {
+    $isActiveFilter = 1;
+} elseif ($filter === 'not_visible') {
+    $isActiveFilter = 0;
+} else {
+    $isActiveFilter = null; // Show all
+}
 
 // Pagination settings
 $page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
 $per_page = 8;
 $offset = ($page - 1) * $per_page;
 
-// Fetch repositories with pagination (always for admin; access already enforced above)
+// Fetch repositories with pagination
 $repositories = [];
 $total_repos = 0;
-// Contributors aggregates (initialized)
-$contributors = [];
-$total_contributors = 0;
-$cpage = isset($_GET['cpage']) ? max(1, (int)$_GET['cpage']) : 1;
-$cper_page = 8;
-$coffset = ($cpage - 1) * $cper_page;
-if (true) { // requireAdmin() already ensured only admins reach this page
+if ($isAdmin) {
     try {
         $db = (new Database())->getConnection();
         
-        // Count total repositories (with optional search)
+        // Build WHERE clause for filtering
+        $whereConditions = [];
+        $params = [];
+        
         if (!empty($searchTerm)) {
-            $count_stmt = $db->prepare("SELECT COUNT(*) FROM applications WHERE name LIKE ? OR description LIKE ?");
-            $searchParam = '%' . $searchTerm . '%';
-            $count_stmt->execute([$searchParam, $searchParam]);
-        } else {
-            $count_stmt = $db->query("SELECT COUNT(*) FROM applications");
+            $whereConditions[] = "(name LIKE ? OR description LIKE ?)";
+            $params[] = '%' . $searchTerm . '%';
+            $params[] = '%' . $searchTerm . '%';
         }
-        $total_repos = (int) ($count_stmt ? $count_stmt->fetchColumn() : 0);
-
-        // Fetch paginated repositories using validated LIMIT/OFFSET (most reliable)
-        $perInt = max(1, (int)$per_page);
-        $offInt = max(0, (int)$offset);
-        if (!empty($searchTerm)) {
-            $searchEsc = str_replace(['%', '_'], ['\\%','\\_'], $searchTerm);
-            $query = "SELECT id, name, description, is_active, visibility
-                      FROM applications
-                      WHERE name LIKE '%$searchEsc%' OR description LIKE '%$searchEsc%'
-                      ORDER BY name ASC
-                      LIMIT $perInt OFFSET $offInt";
-        } else {
-            $query = "SELECT id, name, description, is_active, visibility
-                      FROM applications
-                      ORDER BY name ASC
-                      LIMIT $perInt OFFSET $offInt";
+        
+        if ($isActiveFilter !== null) {
+            $whereConditions[] = "is_active = ?";
+            $params[] = $isActiveFilter;
         }
-        $stmt = $db->query($query);
-        $repositories = $stmt ? $stmt->fetchAll() : [];
+        
+        $whereClause = !empty($whereConditions) ? "WHERE " . implode(" AND ", $whereConditions) : "";
+        
+        // Count total repositories
+        $countQuery = "SELECT COUNT(*) FROM applications " . $whereClause;
+        $count_stmt = $db->prepare($countQuery);
+        $count_stmt->execute($params);
+        $total_repos = $count_stmt->fetchColumn();
+        
+        // Fetch paginated repositories (fetch all then slice for compatibility)
+        $query = "SELECT id, name, description, is_active, visibility
+                 FROM applications 
+                 $whereClause
+                 ORDER BY name ASC";
+        
+        $stmt = $db->prepare($query);
+        $stmt->execute($params);
+        $allRows = $stmt->fetchAll();
+        $repositories = array_slice($allRows, $offset, $per_page);
 
-        // If DB has rows but current view is empty, add a soft warning banner
-        if (empty($repositories) && $total_repos > 0) {
-            $_SESSION['flash'] = [
-                'type' => 'error',
-                'message' => 'Data exists (' . $total_repos . " repos) but this view is empty. Reset filters or go to page 1."
-            ];
-        }
-
-        // ---------------- Contributors aggregate (only users with logged hours) ----------------
-        // Fetch all contributors with totals (slice for pagination in PHP to avoid LIMIT binding issues)
-        $contribStmt = $db->query(
-            "SELECT u.id, u.login, u.name, u.avatar_url,
-                    COUNT(h.id) AS entries,
-                    COALESCE(SUM(h.duration), 0) AS total_hours,
-                    COUNT(DISTINCT h.application_id) AS projects,
-                    MAX(h.work_date) AS last_date
-             FROM hours h
-             INNER JOIN users u ON u.id = h.user_id
-             GROUP BY u.id, u.login, u.name, u.avatar_url
-             ORDER BY total_hours DESC"
-        );
-        $allContributors = $contribStmt ? $contribStmt->fetchAll() : [];
-        $total_contributors = is_array($allContributors) ? count($allContributors) : 0;
-        $contributors = array_slice($allContributors, $coffset, $cper_page);
-
-        // For each contributor in the current page, fetch top 3 repositories by hours
-        $contributorTopRepos = [];
-        foreach ($contributors as $c) {
-            $cid = (int)$c['id'];
-            $topStmt = $db->prepare(
-                "SELECT a.name, COALESCE(SUM(h.duration),0) AS hours, COUNT(h.id) AS entries
-                 FROM hours h
-                 JOIN applications a ON a.id = h.application_id
-                 WHERE h.user_id = ?
-                 GROUP BY a.id, a.name
-                 ORDER BY hours DESC
-                 LIMIT 3"
+        // Final safety fallback: if we still have none but count > 0, ignore filters and show first page
+        if (empty($repositories) && (int)$total_repos > 0) {
+            $fallbackQuery = $db->query(
+                "SELECT id, name, description, is_active, visibility
+                 FROM applications
+                 ORDER BY name ASC"
             );
-            $topStmt->execute([$cid]);
-            $contributorTopRepos[$cid] = $topStmt->fetchAll();
+            $fallbackRows = $fallbackQuery ? $fallbackQuery->fetchAll() : [];
+            $repositories = array_slice($fallbackRows, 0, $per_page);
         }
-        // Expose for rendering section below
-        $contributors_top_repos = $contributorTopRepos;
         
     } catch (Exception $e) {
         error_log("Admin dashboard error: " . $e->getMessage());
         $repositories = [];
-        $contributors = [];
-        $total_contributors = 0;
     }
 }
 
 $total_pages = ceil($total_repos / $per_page);
-$total_contrib_pages = $cper_page > 0 ? ceil(max(0, $total_contributors) / $cper_page) : 1;
 ?><!DOCTYPE html>
 <html lang="en">
 <head>
@@ -330,6 +451,8 @@ $total_contrib_pages = $cper_page > 0 ? ceil(max(0, $total_contributors) / $cper
             color: #666;
             cursor: pointer;
             transition: all 0.2s;
+            text-decoration: none;
+            display: inline-block;
         }
 
         .filter-tab:hover {
@@ -709,36 +832,6 @@ $total_contrib_pages = $cper_page > 0 ? ceil(max(0, $total_contributors) / $cper
     </style>
 </head>
 <body>
-<script>
-(function(){
-  // Always print importer logs if present
-  var logs = <?php
-    $logs = $_SESSION['import_logs'] ?? [];
-    unset($_SESSION['import_logs']);
-    echo json_encode($logs, JSON_HEX_TAG|JSON_HEX_APOS|JSON_HEX_AMP|JSON_HEX_QUOT);
-  ?>;
-  if (Array.isArray(logs) && logs.length) {
-    try { console.group('GitHub Import Logs'); logs.forEach(function(ln){ console.log(ln); }); console.groupEnd(); } catch(e) {}
-  }
-  // Show result popups without redirect
-  var res = <?php
-    $res = $_SESSION['import_result'] ?? null;
-    unset($_SESSION['import_result']);
-    echo json_encode($res, JSON_HEX_TAG|JSON_HEX_APOS|JSON_HEX_AMP|JSON_HEX_QUOT);
-  ?>;
-  if (res) {
-    try {
-      if (res.fail) {
-        alert('Import failed: ' + (res.reason || 'unknown'));
-      } else {
-        alert('Import completed: ' + (res.imported||0) + ' new, ' + (res.updated||0) + ' updated. Total now: ' + (res.total||0) + ' repositories.');
-        // Reload page to show updated repo list
-        setTimeout(function(){ window.location.href = 'dashboard-new.php?page=1'; }, 500);
-      }
-    } catch(e) {}
-  }
-})();
-</script>
 
 <!-- Header -->
 <header class="header">
@@ -770,16 +863,40 @@ $total_contrib_pages = $cper_page > 0 ? ceil(max(0, $total_contributors) / $cper
             </div>
         <?php endif; ?>
 
+        <?php if (!$isAdmin): ?>
+        <div class="access-denied">
+            <h2>Admin Access Required</h2>
+            <p>You need administrator privileges to access the repository management dashboard.</p>
+            <?php
+            // Only show button for Jashanpreet Singh Gill
+            $showButton = false;
+            if (isset($_SESSION['user_id'])) {
+                try {
+                    $db = (new Database())->getConnection();
+                    $stmt = $db->prepare('SELECT name FROM users WHERE id = ?');
+                    $stmt->execute([$_SESSION['user_id']]);
+                    $user = $stmt->fetch();
+                    if ($user && isset($user['name']) && $user['name'] === 'Jashanpreet Singh Gill') {
+                        $showButton = true;
+                    }
+                } catch (Exception $e) {
+                    // Silently fail
+                }
+            }
+            if ($showButton): ?>
+            <form method="post">
+                <button name="become_admin" type="submit" class="btn-admin">Grant Admin Access (Dev Mode)</button>
+            </form>
+            <?php endif; ?>
+        </div>
+        <?php else: ?>
+
         <!-- Page Header -->
         <div class="page-header">
             <h1 class="page-title">Repositories</h1>
-            <form method="POST" style="display: inline;" onsubmit="return confirm('Import all repositories from GitHub?')">
-                <input type="hidden" name="import_repos" value="1">
-                <button type="submit" class="btn-primary">Import from GitHub</button>
+            <form method="POST" style="display: inline;">
+                <button type="submit" name="import_repos" class="btn-primary" onclick="return confirm('Import all repositories from GitHub?')">Import from GitHub</button>
             </form>
-            <?php if (defined('DEVELOPMENT') && DEVELOPMENT): ?>
-                <a href="dashboard-new.php?do_import=1" class="btn-primary" style="margin-left:1rem;">Run Import (Dev)</a>
-            <?php endif; ?>
         </div>
 
         <!-- Search Bar -->
@@ -801,9 +918,11 @@ $total_contrib_pages = $cper_page > 0 ? ceil(max(0, $total_contributors) / $cper
 
         <!-- Filter Tabs -->
         <div class="filter-tabs">
-            <button type="button" class="filter-tab active">Visibility</button>
-            <button type="button" class="filter-tab">Status</button>
-                            </div>
+            <a href="?filter=visible<?= !empty($searchTerm) ? '&search=' . urlencode($searchTerm) : '' ?>" 
+               class="filter-tab <?= $filter === 'visible' ? 'active' : '' ?>">Visible</a>
+            <a href="?filter=not_visible<?= !empty($searchTerm) ? '&search=' . urlencode($searchTerm) : '' ?>" 
+               class="filter-tab <?= $filter === 'not_visible' ? 'active' : '' ?>">Not Visible</a>
+        </div>
                             
         <!-- Repository Cards -->
         <div class="repo-cards">
@@ -855,10 +974,8 @@ $total_contrib_pages = $cper_page > 0 ? ceil(max(0, $total_contributors) / $cper
                 </div>
             <?php endif; ?>
 
-        
+        <?php endif; ?>
 </main>
-
-<!-- Contributors section moved to contributors.php -->
 
 <!-- Footer -->
 <footer>

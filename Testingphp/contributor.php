@@ -27,40 +27,7 @@ try {
         redirect(BASE_URL . 'index.php?error=user_not_found');
     }
     
-    // Get GitHub user data and repositories
-    $headers = ["User-Agent: BrickMMO-Timesheets"];
-    
-    function fetchGitHubData($url, $headers) {
-        $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $url);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
-        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
-        curl_setopt($ch, CURLOPT_TIMEOUT, 10);
-        $response = curl_exec($ch);
-        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        curl_close($ch);
-        
-        if ($httpCode === 200) {
-            return json_decode($response, true);
-        }
-        return null;
-    }
-    
-    // Fetch BrickMMO repositories
-    $repos_url = "https://api.github.com/users/brickmmo/repos";
-    $repositories = fetchGitHubData($repos_url, $headers);
-    
-    // Sort repositories by name
-    if (is_array($repositories)) {
-        usort($repositories, function($a, $b) {
-            return strcmp($a['name'], $b['name']);
-        });
-    }
-    
-    // Fetch GitHub user profile
-    $github_user_url = "https://api.github.com/users/$username";
-    $github_user_data = fetchGitHubData($github_user_url, $headers);
+    // View-only page: all data shown below is from local database
     
     // Get user's time tracking statistics
     $stats_stmt = $db->prepare("
@@ -156,22 +123,31 @@ try {
     <title><?= htmlspecialchars($user['name'] ?? $username) ?> - BrickMMO Contributor</title>
     <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
     <link rel="stylesheet" href="css/style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet"/>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
 </head>
 <body>
     <!-- Navigation Header -->
+    <?php 
+    $fromAdmin = isset($_GET['from']) && $_GET['from'] === 'admin';
+    ?>
     <header style="background: white; border-bottom: 1px solid #E8D5CF; padding: 1.5rem 0; margin-bottom: 2rem;">
-        <div style="max-width: 1600px; margin: 0 auto; padding: 0 1rem; display: flex; justify-content: space-between; align-items: center;">
+        <div style="max-width: 1600px; margin: 0 auto; padding: 0 1rem; display: flex; justify-content: <?= $fromAdmin ? 'flex-start' : 'space-between' ?>; align-items: center;">
             <div>
-                <a href="index.php">
-                    <img src="./assets/BrickMMO_Logo_Coloured.png" alt="BrickMMO" style="height: 48px;">
-                </a>
+                <?php if ($fromAdmin): ?>
+                    <a href="admin/contributors.php" style="color: #DD5A3A; text-decoration: none; font-weight: 600; font-size: 1.25rem; display: flex; align-items: center; gap: 0.75rem;">
+                        <span style="font-size: 1.5rem;">←</span> Return to Contributors
+                    </a>
+                <?php else: ?>
+                    <a href="index.php">
+                        <img src="./assets/BrickMMO_Logo_Coloured.png" alt="BrickMMO" style="height: 48px;">
+                    </a>
+                <?php endif; ?>
             </div>
+            <?php if (!$fromAdmin): ?>
             <nav style="display: flex; gap: 2rem; align-items: center;">
                 <a href="<?= BASE_URL ?>" style="color: #DD5A3A; text-decoration: none; font-weight: 600; font-size: 0.95rem;">Home</a>
-                <a href="https://brickmmo.com" style="color: #DD5A3A; text-decoration: none; font-weight: 600; font-size: 0.95rem;">BrickMMO Main Site</a>
                 <?php if (isset($_SESSION['user_id'])): ?>
                     <a href="<?= BASE_URL ?>dashboard.php" style="color: #DD5A3A; text-decoration: none; font-weight: 600; font-size: 0.95rem;">Dashboard</a>
                     <a href="<?= BASE_URL ?>personal-history.php" style="color: #DD5A3A; text-decoration: none; font-weight: 600; font-size: 0.95rem;">My History</a>
@@ -180,6 +156,7 @@ try {
                     <a href="<?= BASE_URL ?>auth/login.php" style="color: #DD5A3A; text-decoration: none; font-weight: 600; font-size: 0.95rem;">Login</a>
                 <?php endif; ?>
             </nav>
+            <?php endif; ?>
         </div>
     </header>
 
@@ -189,28 +166,9 @@ try {
             <div class="w3-card bg-brick brick-card" style="padding: 2rem;">
                 <h2 class="section-title"><?= htmlspecialchars($user['name'] ?? $username) ?></h2>
                 <p class="section-subtitle">Detailed view of contributor information and statistics</p>
+                <p class="section-subtitle">View-only profile. To log time, use your <a href="<?= BASE_URL ?>dashboard.php">Dashboard</a>.</p>
                 
-                <!-- Log New Hours Section -->
-                <div style="margin-bottom: 2rem;">
-                    <h3>Log New Hours</h3>
-                    <p>Log your hours and view your contribution history.</p>
-                    
-                    <div class="form-group" style="max-width: 400px;">
-                        <label for="repository" style="display: block; margin-bottom: 0.5rem;">Repository</label>
-                        <select id="repository" class="form-control" style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
-                            <option value="">Select a repository...</option>
-                            <?php if (is_array($repositories)): ?>
-                                <?php foreach ($repositories as $repo): ?>
-                                    <option value="<?= htmlspecialchars($repo['name']) ?>">
-                                        <?= strtoupper(htmlspecialchars($repo['name'])) ?>
-                                    </option>
-                                <?php endforeach; ?>
-                            <?php endif; ?>
-                        </select>
-                    </div>
-                    
-                    <button class="brick-btn" style="margin-top: 1rem; padding: 0.5rem 1rem;">Log Hours</button>
-                </div>
+                
 
                 <!-- Stats Grid -->
                 <div class="stats-grid">

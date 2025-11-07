@@ -19,7 +19,7 @@ try {
     $user_stmt->execute([$_SESSION['user_id']]);
     $user = $user_stmt->fetch();
     
-    // Fetch active applications from database (synced from php-learn)
+    // Fetch active applications from database
     $apps_stmt = $db->prepare("
         SELECT id, name, description, language 
         FROM applications 
@@ -417,7 +417,6 @@ try {
                 <a href="<?= BASE_URL ?>" style="color: #DD5A3A; text-decoration: none; font-weight: 600; font-size: 0.95rem;">Home</a>
                 <a href="<?= BASE_URL ?>dashboard.php" style="color: #DD5A3A; text-decoration: none; font-weight: 600; font-size: 0.95rem;">Dashboard</a>
                 <a href="<?= BASE_URL ?>personal-history.php" style="color: #DD5A3A; text-decoration: none; font-weight: 600; font-size: 0.95rem;">My History</a>
-                <a href="https://brickmmo.com" style="color: #DD5A3A; text-decoration: none; font-weight: 600; font-size: 0.95rem;">BrickMMO Main Site</a>
                 <a href="<?= BASE_URL ?>auth/logout.php" style="color: #DD5A3A; text-decoration: none; font-weight: 600; font-size: 0.95rem;">Logout</a>
             </nav>
         </div>

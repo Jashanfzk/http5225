@@ -26,6 +26,22 @@ if (!$filterName && !$filterLanguage && !$filterDescription) {
 // Check if user is logged in
 $isLoggedIn = isset($_SESSION['user_id']) && !empty($_SESSION['user_id']);
 
+// Check if user is Jashanpreet Singh Gill (only authorized admin)
+$isAuthorizedAdmin = false;
+if ($isLoggedIn) {
+    try {
+        $db = (new Database())->getConnection();
+        $stmt = $db->prepare('SELECT name FROM users WHERE id = ?');
+        $stmt->execute([$_SESSION['user_id']]);
+        $user = $stmt->fetch();
+        if ($user && isset($user['name']) && $user['name'] === 'Jashanpreet Singh Gill') {
+            $isAuthorizedAdmin = true;
+        }
+    } catch (Exception $e) {
+        // Silently fail
+    }
+}
+
 // No live GitHub calls here anymore; public listing reads from database only
 
 try {
@@ -155,9 +171,9 @@ $baseQuery = [
             <div>
                 <ul class="nav-links">
                     <li><a href="https://brickmmo.com/">BrickMMo Main Site</a></li>
+                    <li><a href="admin/">Admin</a></li>
                     <?php if ($isLoggedIn): ?>
-                        <li><a href="dashboard.php">Dashboard</a></li>
-                        <li><a href="personal-history.php">My History</a></li>
+                        <li><a href="dashboard.php">USER</a></li>
                         <li><a href="auth/logout.php">Logout</a></li>
                     <?php else: ?>
                         <li><a href="auth/login.php">Login</a></li>
