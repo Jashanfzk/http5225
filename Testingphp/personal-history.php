@@ -1,16 +1,11 @@
 <?php
-/**
- * Personal History Page
- * View detailed time entry history with filtering and pagination
- */
+
 
 require_once 'config/config.php';
 require_once 'config/database.php';
 
-// Require login
 requireLogin();
 
-// Initialize variables
 $error_message = '';
 $success_message = '';
 $time_entries = [];
@@ -23,12 +18,9 @@ try {
     $database = new Database();
     $db = $database->getConnection();
     
-    // Check if database connection is working
     if (!$db) {
         throw new Exception("Database connection failed");
     }
-    
-    // Get user information
     $user_stmt = $db->prepare("SELECT * FROM users WHERE id = ?");
     $user_stmt->execute([$_SESSION['user_id']]);
     $user = $user_stmt->fetch();
@@ -37,7 +29,6 @@ try {
         throw new Exception("User not found");
     }
     
-    // Get filter parameters
     $page = isset($_GET['page']) ? max(1, intval($_GET['page'])) : 1;
     $app_filter = isset($_GET['app']) ? intval($_GET['app']) : 0;
     $date_from = isset($_GET['date_from']) ? sanitizeInput($_GET['date_from']) : '';
@@ -45,7 +36,6 @@ try {
     
     $offset = ($page - 1) * ITEMS_PER_PAGE;
     
-    // Build query conditions
     $where_conditions = ["h.user_id = ?"];
     $params = [$_SESSION['user_id']];
     
@@ -66,14 +56,11 @@ try {
     
     $where_clause = "WHERE " . implode(" AND ", $where_conditions);
     
-    // Get total count for pagination
     $count_sql = "SELECT COUNT(*) as total FROM hours h $where_clause";
     $count_stmt = $db->prepare($count_sql);
     $count_stmt->execute($params);
     $total_items = $count_stmt->fetch()['total'];
     $total_pages = ceil($total_items / ITEMS_PER_PAGE);
-    
-    // Get time entries with pagination
     $sql = "
         SELECT 
             h.*,
@@ -93,17 +80,13 @@ try {
     $stmt->execute($params);
     $time_entries = $stmt->fetchAll();
     
-    // Get applications for filter dropdown
     $apps_stmt = $db->prepare("SELECT * FROM applications WHERE is_active = 1 ORDER BY name ASC");
     $apps_stmt->execute();
     $applications = $apps_stmt->fetchAll();
     
-    // Check if user has any time entries at all
     $has_entries_stmt = $db->prepare("SELECT COUNT(*) as count FROM hours WHERE user_id = ?");
     $has_entries_stmt->execute([$_SESSION['user_id']]);
     $has_entries = $has_entries_stmt->fetch()['count'] > 0;
-    
-    // Get summary statistics
     $stats_sql = "
         SELECT 
             COUNT(*) as total_entries,
@@ -116,10 +99,9 @@ try {
         $where_clause
     ";
     $stats_stmt = $db->prepare($stats_sql);
-    $stats_stmt->execute(array_slice($params, 0, -2)); // Remove pagination params
+    $stats_stmt->execute(array_slice($params, 0, -2));
     $summary_stats = $stats_stmt->fetch();
     
-    // Get monthly breakdown for current year
     $monthly_sql = "
         SELECT 
             DATE_FORMAT(work_date, '%Y-%m') as month,
@@ -428,7 +410,7 @@ try {
     </style>
 </head>
 <body>
-    <!-- Navigation Header -->
+    
     <header style="background: white; border-bottom: 1px solid #E8D5CF; padding: 1.5rem 0; margin-bottom: 2rem;">
         <div style="max-width: 1600px; margin: 0 auto; padding: 0 1rem; display: flex; justify-content: space-between; align-items: center;">
             <div>
@@ -437,10 +419,21 @@ try {
                 </a>
             </div>
             <nav style="display: flex; gap: 2rem; align-items: center;">
-                <a href="<?= BASE_URL ?>" style="color: #DD5A3A; text-decoration: none; font-weight: 600; font-size: 0.95rem;">Home</a>
-                <a href="<?= BASE_URL ?>dashboard.php" style="color: #DD5A3A; text-decoration: none; font-weight: 600; font-size: 0.95rem;">Dashboard</a>
-                <a href="<?= BASE_URL ?>personal-history.php" style="color: #DD5A3A; text-decoration: none; font-weight: 600; font-size: 0.95rem;">My History</a>
-                <a href="<?= BASE_URL ?>auth/logout.php" style="color: #DD5A3A; text-decoration: none; font-weight: 600; font-size: 0.95rem;">Logout</a>
+                <?php
+                $current_page = basename($_SERVER['PHP_SELF']);
+                $nav_items = [
+                    ['url' => BASE_URL, 'label' => 'Home', 'page' => 'index.php'],
+                    ['url' => BASE_URL . 'dashboard.php', 'label' => 'Dashboard', 'page' => 'dashboard.php'],
+                    ['url' => BASE_URL . 'personal-history.php', 'label' => 'My History', 'page' => 'personal-history.php'],
+                    ['url' => BASE_URL . 'auth/logout.php', 'label' => 'Logout', 'page' => 'logout.php']
+                ];
+                
+                foreach ($nav_items as $item):
+                    $is_active = ($current_page === $item['page']);
+                    $style = "color: #DD5A3A; text-decoration: " . ($is_active ? "underline" : "none") . "; font-weight: 600; font-size: 0.95rem;";
+                ?>
+                    <a href="<?= $item['url'] ?>" style="<?= $style ?>"><?= $item['label'] ?></a>
+                <?php endforeach; ?>
             </nav>
         </div>
     </header>
@@ -451,7 +444,7 @@ try {
             <p style="font-size: 1.1rem; color: #666;">View your logged hours and contributions.</p>
         </div>
         
-        <!-- Error Message -->
+        
         <?php if (!empty($error_message)): ?>
             <div class="alert alert-error">
                 <strong>Error:</strong> <?= htmlspecialchars($error_message) ?>
@@ -459,14 +452,14 @@ try {
             </div>
         <?php endif; ?>
         
-        <!-- Success Message -->
+        
         <?php if (!empty($success_message)): ?>
             <div class="alert alert-success">
                 <?= htmlspecialchars($success_message) ?>
             </div>
         <?php endif; ?>
         
-        <!-- Summary Statistics -->
+        
         <div class="card">
             <h2 style="font-size: 1.5rem; font-weight: 700; margin-bottom: 1rem;">Summary Statistics</h2>
             <div class="stats-grid">
@@ -495,7 +488,7 @@ try {
             </div>
         </div>
         
-        <!-- Filters -->
+        
         <div class="card">
             <h2 style="font-size: 1.5rem; font-weight: 700; margin-bottom: 1rem;">Filters</h2>
             <form method="GET" class="filters-form">
@@ -527,7 +520,7 @@ try {
             </form>
         </div>
         
-        <!-- Time Entries -->
+        
         <div class="card">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
                 <h2 style="font-size: 1.5rem; font-weight: 700;">Time Entries</h2>
@@ -578,7 +571,7 @@ try {
                     <?php endforeach; ?>
                 </div>
                 
-                <!-- Pagination -->
+                
                 <?php if ($total_pages > 1): ?>
                     <div class="pagination">
                         <?php if ($page > 1): ?>
@@ -641,8 +634,6 @@ try {
     </div>
     
     <script>
-        // Monthly Chart
-        // Monthly data is still available for other potential uses
         const monthlyData = <?= json_encode($monthly_data) ?>;
     </script>
 </body>

@@ -1,49 +1,35 @@
 <?php
-/**
- * Application Configuration Example
- * BrickMMO Timesheets Management System
- * 
- * Copy this file to config.php and fill in your actual values
- */
 
-// Start session if not already started
+
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-// Environment configuration
-define('DEVELOPMENT', true); // Enable development mode for better error messages
+define('DEVELOPMENT', true); Enable development mode for better error messages
 define('APP_NAME', 'BrickMMO Timesheets');
 define('APP_VERSION', '1.0.0');
 define('BASE_URL', 'http://localhost/http5225/Testingphp/');
 
-// GitHub OAuth Configuration
-// Get these from: https://github.com/settings/applications/new
 define('GITHUB_CLIENT_ID', 'YOUR_GITHUB_CLIENT_ID_HERE');
 define('GITHUB_CLIENT_SECRET', 'YOUR_GITHUB_CLIENT_SECRET_HERE');
 define('GITHUB_REDIRECT_URI', BASE_URL . 'auth/callback.php');
 
-// Database Configuration
 define('DB_HOST', 'localhost');
 define('DB_NAME', 'brickmmo_timesheets');
 define('DB_USER', 'root');
 define('DB_PASS', '');
 
-// Security Configuration
 define('CSRF_TOKEN_NAME', '_token');
-define('SESSION_TIMEOUT', 3600); // 1 hour
+define('SESSION_TIMEOUT', 3600); 1 hour
 
-// GitHub API Configuration
 define('GITHUB_API_BASE', 'https://api.github.com');
 define('GITHUB_ORG', 'BrickMMO');
-define('GITHUB_TOKEN', ''); // Optional: Add your personal access token here if needed to avoid rate limiting
+define('GITHUB_TOKEN', ''); Optional: Add your personal access token here if needed to avoid rate limiting
 
-// Application Settings
 define('ITEMS_PER_PAGE', 8);
 define('MAX_HOURS_PER_DAY', 16.0);
 define('MIN_HOURS_PER_ENTRY', 0.25);
 
-// Error Reporting
 if (defined('DEVELOPMENT') && DEVELOPMENT) {
     error_reporting(E_ALL);
     ini_set('display_errors', 1);
@@ -52,7 +38,6 @@ if (defined('DEVELOPMENT') && DEVELOPMENT) {
     ini_set('display_errors', 0);
 }
 
-// Utility Functions
 function generateCSRFToken() {
     if (!isset($_SESSION[CSRF_TOKEN_NAME])) {
         $_SESSION[CSRF_TOKEN_NAME] = bin2hex(random_bytes(32));
@@ -86,7 +71,6 @@ function requireLogin() {
 function requireAdmin() {
     requireLogin();
     
-    // Only allow Jashanpreet Singh Gill to access admin pages
     if (!isset($_SESSION['user_id'])) {
         redirect(BASE_URL . 'index.php?error=access_denied');
     }
@@ -98,12 +82,10 @@ function requireAdmin() {
         $stmt->execute([$_SESSION['user_id']]);
         $user = $stmt->fetch();
         
-        // Check if user is Jashanpreet Singh Gill
         if (!$user || !isset($user['name']) || $user['name'] !== 'Jashanpreet Singh Gill') {
             redirect(BASE_URL . 'index.php?error=access_denied');
         }
         
-        // Auto-grant admin access for Jashanpreet Singh Gill
         $updateStmt = $db->prepare('UPDATE users SET is_admin = 1 WHERE id = ?');
         $updateStmt->execute([$_SESSION['user_id']]);
         $_SESSION['is_admin'] = true;
@@ -114,27 +96,22 @@ function requireAdmin() {
     }
 }
 
-// Database Connection
 try {
-    // First connect without database selection
     $connection = mysqli_connect(DB_HOST, DB_USER, DB_PASS);
     
     if (!$connection) {
         throw new Exception("Database connection failed: " . mysqli_connect_error());
     }
     
-    // Create database if not exists
     $create_db_query = "CREATE DATABASE IF NOT EXISTS " . DB_NAME;
     if (!mysqli_query($connection, $create_db_query)) {
         throw new Exception("Failed to create database: " . mysqli_error($connection));
     }
     
-    // Select the database
     if (!mysqli_select_db($connection, DB_NAME)) {
         throw new Exception("Failed to select database: " . mysqli_error($connection));
     }
     
-    // Create repositories table with all required fields
     $create_table_query = "
         CREATE TABLE IF NOT EXISTS repositories (
             id INT AUTO_INCREMENT PRIMARY KEY,
@@ -148,7 +125,6 @@ try {
         throw new Exception("Failed to create table: " . mysqli_error($connection));
     }
     
-    // Set charset to ensure proper encoding
     mysqli_set_charset($connection, 'utf8mb4');
     
 } catch (Exception $e) {

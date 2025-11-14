@@ -1,4 +1,4 @@
-/* General Styles */
+
 @import url('https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap');
 
 body {
@@ -12,7 +12,7 @@ body {
     line-height: 1.6;
 }
 
-/* Header */
+
 header {
     background-color: #fff;
     padding: 15px 30px;
@@ -43,7 +43,7 @@ h1 {
     color: #848484;
 }
 
-/* Return Button */
+
 .return-btn {
     display: inline-block;
     text-decoration: none;
@@ -63,7 +63,7 @@ h1 {
     box-shadow: 0 4px 12px rgba(255, 91, 0, 0.2);
 }
 
-/* GitHub Button */
+
 .github-btn {
     display: inline-block;
     background-color: #ff5b00;
@@ -86,7 +86,7 @@ h1 {
     box-shadow: 0 4px 12px rgba(255, 91, 0, 0.3);
 }
 
-/* Interactive Buttons */
+
 .interactive-btn {
     background-color: #28a745;
     color: white;
@@ -108,7 +108,7 @@ h1 {
     margin-right: 5px;
 }
 
-/* Repository Card */
+
 #repo-card {
     max-width: 1200px;
     width: 100%;
@@ -157,7 +157,7 @@ h1 {
     line-height: 1.6;
 }
 
-/* Repository Details */
+
 #repo-details {
     margin-top: 25px;
     padding: 20px;
@@ -196,7 +196,7 @@ h1 {
     color: #555;
 }
 
-/* Contributors Styling */
+
 #contributors-list {
     margin-top: 10px;
 }
@@ -239,7 +239,7 @@ h1 {
     font-size: 12px;
 }
 
-/* Issues Container */
+
 .issues-container {
     display: flex;
     flex-wrap: wrap;
@@ -276,7 +276,7 @@ h1 {
     font-weight: 600;
 }
 
-/* README Section */
+
 #readme-section {
     max-width: 1200px;
     width: 100%;
@@ -328,7 +328,7 @@ h1 {
     border-left: 4px solid #ff5b00;
 }
 
-/* Modal Styles */
+
 .modal {
     display: none;
     position: fixed;
@@ -395,13 +395,13 @@ h1 {
     padding: 30px;
 }
 
-/* Chart Container */
+
 #languageChart, #commitChart {
     max-width: 100%;
     height: 400px;
 }
 
-/* Commit Details */
+
 #commit-details {
     margin-top: 30px;
 }
@@ -448,7 +448,7 @@ h1 {
     flex: 1;
 }
 
-/* Footer */
+
 footer {
     background-color: #fff;
     padding: 30px 20px;
@@ -462,7 +462,7 @@ footer {
     border-top: 1px solid #e0e0e0;
 }
 
-/* Social Icons */
+
 .social-icons {
     display: flex;
     gap: 15px;
@@ -504,7 +504,7 @@ footer {
     color: black;
 }
 
-/* Accordion Styles - Themed to match website */
+
 .accordion {
     border-radius: 10px;
     overflow: hidden;
@@ -581,7 +581,7 @@ footer {
     to { opacity: 1; transform: translateY(0); }
 }
 
-/* Responsive Design */
+
 @media (max-width: 1024px) {
     #repo-card, #readme-section {
         max-width: 90%;

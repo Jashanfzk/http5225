@@ -1,13 +1,9 @@
 <?php
-/**
- * Contributor Profile Page
- * Shows detailed information about a specific contributor
- */
+
 
 require_once 'config/config.php';
 require_once 'config/database.php';
 
-// Get GitHub username from URL
 $username = isset($_GET['user']) ? sanitizeInput($_GET['user']) : '';
 
 if (empty($username)) {
@@ -18,7 +14,6 @@ try {
     $database = new Database();
     $db = $database->getConnection();
     
-    // Get user from database
     $user_stmt = $db->prepare("SELECT * FROM users WHERE login = ?");
     $user_stmt->execute([$username]);
     $user = $user_stmt->fetch();
@@ -27,9 +22,7 @@ try {
         redirect(BASE_URL . 'index.php?error=user_not_found');
     }
     
-    // View-only page: all data shown below is from local database
     
-    // Get user's time tracking statistics
     $stats_stmt = $db->prepare("
         SELECT 
             COUNT(*) as total_entries,
@@ -44,7 +37,6 @@ try {
     $stats_stmt->execute([$user['id']]);
     $user_stats = $stats_stmt->fetch();
     
-    // Get repositories user has contributed to
     $repos_stmt = $db->prepare("
         SELECT 
             a.id,
@@ -64,7 +56,6 @@ try {
     $repos_stmt->execute([$user['id']]);
     $contributed_repos = $repos_stmt->fetchAll();
     
-    // Get recent time entries
     $recent_stmt = $db->prepare("
         SELECT 
             h.*,
@@ -79,7 +70,6 @@ try {
     $recent_stmt->execute([$user['id']]);
     $recent_entries = $recent_stmt->fetchAll();
     
-    // Get monthly contribution data for current year
     $monthly_stmt = $db->prepare("
         SELECT 
             DATE_FORMAT(work_date, '%Y-%m') as month,
@@ -93,7 +83,6 @@ try {
     $monthly_stmt->execute([$user['id']]);
     $monthly_data = $monthly_stmt->fetchAll();
     
-    // Get top contributors (for the top contributors section)
     $top_contributors_stmt = $db->prepare("
         SELECT 
             u.name,
@@ -128,7 +117,7 @@ try {
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
 </head>
 <body>
-    <!-- Navigation Header -->
+    
     <?php 
     $fromAdmin = isset($_GET['from']) && $_GET['from'] === 'admin';
     ?>
@@ -160,7 +149,7 @@ try {
         </div>
     </header>
 
-    <!-- Repository Details Section -->
+    
     <section id="repository" style="padding: 3rem 1rem;">
         <div class="w3-container" style="max-width: 1600px; margin: 0 auto;">
             <div class="w3-card bg-brick brick-card" style="padding: 2rem;">
@@ -170,7 +159,7 @@ try {
                 
                 
 
-                <!-- Stats Grid -->
+                
                 <div class="stats-grid">
                     <div class="stats-card">
                         <h4 class="text-subtext" style="margin: 0;">Total Hours</h4>
@@ -192,7 +181,7 @@ try {
                     </div>
                 </div>
 
-                <!-- Repositories Contributed To -->
+                
                 <h3 class="subsection-title">Repositories Contributed To</h3>
                 <?php if (!empty($contributed_repos)): ?>
                     <div style="max-width: 100%;">
@@ -228,7 +217,6 @@ try {
     </section>
     
     <script>
-        // Smooth scroll for anchor links
         document.querySelectorAll('a[href^="#"]').forEach(anchor => {
             anchor.addEventListener('click', function (e) {
                 e.preventDefault();

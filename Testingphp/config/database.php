@@ -1,9 +1,4 @@
 <?php
-/**
- * Database Configuration
- * BrickMMO Timesheets Management System
- */
-
 class Database {
     private $host = 'localhost';
     private $db_name = 'brickmmo_timesheets';

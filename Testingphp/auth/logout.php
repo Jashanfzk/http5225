@@ -1,23 +1,22 @@
 <?php
-/**
- * User Logout
- * Destroys session and redirects to home page
- */
-
 require_once '../config/config.php';
 
-// Destroy session
-session_destroy();
+header("Cache-Control: no-cache, no-store, must-revalidate");
+header("Pragma: no-cache");
+header("Expires: 0");
 
-// Clear session cookie
-if (ini_get("session.use_cookies")) {
-    $params = session_get_cookie_params();
-    setcookie(session_name(), '', time() - 42000,
-        $params["path"], $params["domain"],
-        $params["secure"], $params["httponly"]
-    );
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
 }
 
-// Redirect to home page
+$_SESSION = array();
+
+if (ini_get("session.use_cookies")) {
+    $params = session_get_cookie_params();
+    setcookie(session_name(), '', time() - 3600, $params["path"], $params["domain"], $params["secure"], $params["httponly"]);
+    setcookie(session_name(), '', time() - 3600, '/');
+}
+
+session_destroy();
 redirect(BASE_URL . 'index.php?message=logged_out');
 ?>

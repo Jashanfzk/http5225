@@ -1,25 +1,31 @@
 <?php
-/**
- * Contributor Profile
- * Log hours and view contribution history
- */
-
 require_once 'config/config.php';
 require_once 'config/database.php';
 
-// Require login
 requireLogin();
 
 try {
     $database = new Database();
     $db = $database->getConnection();
     
-    // Get user information
+    if (!isset($_SESSION['user_id']) || empty($_SESSION['user_id'])) {
+        redirect(BASE_URL . 'auth/login.php');
+    }
+    
     $user_stmt = $db->prepare("SELECT * FROM users WHERE id = ?");
     $user_stmt->execute([$_SESSION['user_id']]);
     $user = $user_stmt->fetch();
     
-    // Fetch active applications from database
+    if (!$user) {
+        $_SESSION = array();
+        if (ini_get("session.use_cookies")) {
+            $params = session_get_cookie_params();
+            setcookie(session_name(), '', time() - 42000, $params["path"], $params["domain"], $params["secure"], $params["httponly"]);
+        }
+        session_destroy();
+        redirect(BASE_URL . 'auth/login.php');
+    }
+    
     $apps_stmt = $db->prepare("
         SELECT id, name, description, language 
         FROM applications 
@@ -29,22 +35,18 @@ try {
     $apps_stmt->execute();
     $applications = $apps_stmt->fetchAll();
     
-    // Process form submission
     $message = '';
     $error = '';
     
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['log_hours'])) {
-        // Validate CSRF token
         if (!validateCSRFToken($_POST['csrf_token'] ?? '')) {
             $error = 'Invalid request. Please try again.';
         } else {
-            // Validate and sanitize input
             $application_id = intval($_POST['application_id'] ?? 0);
             $work_date = sanitizeInput($_POST['work_date'] ?? '');
             $duration = floatval($_POST['duration'] ?? 0);
             $description = sanitizeInput($_POST['description'] ?? '');
             
-            // Validate required fields
             if ($application_id <= 0) {
                 $error = 'Please select a repository.';
             } elseif (empty($work_date)) {
@@ -54,13 +56,11 @@ try {
             } elseif (strtotime($work_date) > time()) {
                 $error = 'Work date cannot be in the future.';
             } else {
-                // Check if application exists and is active
                 $app_stmt = $db->prepare("SELECT id FROM applications WHERE id = ? AND is_active = 1");
                 $app_stmt->execute([$application_id]);
                 if (!$app_stmt->fetch()) {
                     $error = 'Invalid repository selected.';
                 } else {
-                    // Insert time entry
                     $insert_stmt = $db->prepare("
                         INSERT INTO hours (user_id, application_id, work_date, duration, description) 
                         VALUES (?, ?, ?, ?, ?)
@@ -68,6 +68,7 @@ try {
                     
                     if ($insert_stmt->execute([$_SESSION['user_id'], $application_id, $work_date, $duration, $description])) {
                         $message = 'Hours logged successfully!';
+                        $_SESSION['last_logged_date'] = $work_date;
                     } else {
                         $error = 'Failed to log hours. Please try again.';
                     }
@@ -76,7 +77,6 @@ try {
         }
     }
     
-    // Get user's recent time entries
     $recent_stmt = $db->prepare("
         SELECT 
             h.*,
@@ -91,7 +91,6 @@ try {
     $recent_stmt->execute([$_SESSION['user_id']]);
     $recent_entries = $recent_stmt->fetchAll();
     
-    // Get user's total statistics
     $stats_stmt = $db->prepare("
         SELECT 
             COUNT(*) as total_entries,
@@ -120,6 +119,8 @@ try {
     <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
     <link rel="stylesheet" href="css/w3-theme.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <style>
         * {
             margin: 0;
@@ -197,9 +198,14 @@ try {
         }
         
         .dashboard-content {
-            display: grid;
-            grid-template-columns: minmax(300px, 1fr) minmax(600px, 2fr);
+            display: flex;
+            justify-content: center;
             gap: 1.5rem;
+        }
+        
+        .dashboard-content .card {
+            max-width: 800px;
+            width: 100%;
         }
         
         .card {
@@ -375,9 +381,66 @@ try {
             border-radius: 8px;
         }
         
+        
+        .flatpickr-calendar {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            border: 1px solid #E8D5CF;
+        }
+        
+        .flatpickr-day.selected,
+        .flatpickr-day.selected:hover {
+            background: #DD5A3A !important;
+            border-color: #DD5A3A !important;
+            color: white !important;
+            font-weight: 600;
+        }
+        
+        .flatpickr-day.today {
+            border-color: #DD5A3A;
+            font-weight: 600;
+        }
+        
+        .flatpickr-day.today:hover {
+            background: #FFF8F6;
+            border-color: #DD5A3A;
+        }
+        
+        .flatpickr-day:hover {
+            background: #FFF8F6;
+            border-color: #DD5A3A;
+        }
+        
+        .flatpickr-months .flatpickr-month {
+            color: #2C3E50;
+            font-weight: 600;
+        }
+        
+        .flatpickr-weekdays {
+            background: #FDF6F3;
+        }
+        
+        .flatpickr-weekday {
+            color: #666;
+            font-weight: 600;
+        }
+        
+        #calendar-display {
+            background: white;
+            border-radius: 8px;
+            padding: 0.5rem;
+        }
+        
+        #calendar-display .flatpickr-calendar {
+            position: relative !important;
+            box-shadow: none;
+            margin: 0 auto;
+        }
+        
         @media (max-width: 1200px) {
-            .dashboard-content {
-                grid-template-columns: 1fr;
+            .dashboard-content .card {
+                max-width: 100%;
             }
             
             .dashboard-container {
@@ -405,7 +468,7 @@ try {
     </style>
 </head>
 <body>
-    <!-- Navigation Header -->
+    
     <header style="background: white; border-bottom: 1px solid #E8D5CF; padding: 1.5rem 0; margin-bottom: 2rem;">
         <div style="max-width: 1600px; margin: 0 auto; padding: 0 1rem; display: flex; justify-content: space-between; align-items: center;">
             <div>
@@ -414,16 +477,27 @@ try {
                 </a>
             </div>
             <nav style="display: flex; gap: 2rem; align-items: center;">
-                <a href="<?= BASE_URL ?>" style="color: #DD5A3A; text-decoration: none; font-weight: 600; font-size: 0.95rem;">Home</a>
-                <a href="<?= BASE_URL ?>dashboard.php" style="color: #DD5A3A; text-decoration: none; font-weight: 600; font-size: 0.95rem;">Dashboard</a>
-                <a href="<?= BASE_URL ?>personal-history.php" style="color: #DD5A3A; text-decoration: none; font-weight: 600; font-size: 0.95rem;">My History</a>
-                <a href="<?= BASE_URL ?>auth/logout.php" style="color: #DD5A3A; text-decoration: none; font-weight: 600; font-size: 0.95rem;">Logout</a>
+                <?php
+                $current_page = basename($_SERVER['PHP_SELF']);
+                $nav_items = [
+                    ['url' => BASE_URL, 'label' => 'Home', 'page' => 'index.php'],
+                    ['url' => BASE_URL . 'dashboard.php', 'label' => 'Dashboard', 'page' => 'dashboard.php'],
+                    ['url' => BASE_URL . 'personal-history.php', 'label' => 'My History', 'page' => 'personal-history.php'],
+                    ['url' => BASE_URL . 'auth/logout.php', 'label' => 'Logout', 'page' => 'logout.php']
+                ];
+                
+                foreach ($nav_items as $item):
+                    $is_active = ($current_page === $item['page']);
+                    $style = "color: #DD5A3A; text-decoration: " . ($is_active ? "underline" : "none") . "; font-weight: 600; font-size: 0.95rem;";
+                ?>
+                    <a href="<?= $item['url'] ?>" style="<?= $style ?>"><?= $item['label'] ?></a>
+                <?php endforeach; ?>
             </nav>
         </div>
     </header>
 
     <div class="dashboard-container">
-        <!-- Header -->
+        
         <div class="dashboard-header">
             <div>
                 <h1 class="dashboard-title">Contributor Profile</h1>
@@ -438,7 +512,7 @@ try {
             </div>
         </div>
         
-        <!-- Messages -->
+        
         <?php if ($message): ?>
             <div class="alert alert-success">
                 <?= htmlspecialchars($message) ?>
@@ -451,9 +525,9 @@ try {
             </div>
         <?php endif; ?>
         
-        <!-- Main Content -->
+        
         <div class="dashboard-content">
-            <!-- Left: Log New Hours -->
+            
             <div class="card">
                 <h2 class="card-title">Log New Hours</h2>
                 <form method="POST">
@@ -477,9 +551,11 @@ try {
                     
                     <div class="form-group">
                         <label class="form-label" for="work_date">Date</label>
-                        <input class="form-control" id="work_date" name="work_date" type="date" 
-                               value="<?= isset($_POST['work_date']) ? htmlspecialchars($_POST['work_date']) : date('Y-m-d') ?>"
-                               max="<?= date('Y-m-d') ?>" required/>
+                        <input class="form-control" id="work_date" name="work_date" type="text" 
+                               value="<?= isset($_POST['work_date']) ? htmlspecialchars($_POST['work_date']) : (isset($_SESSION['last_logged_date']) ? htmlspecialchars($_SESSION['last_logged_date']) : date('Y-m-d')) ?>"
+                               placeholder="Select a date" required/>
+                        
+                        <div id="calendar-display" style="margin-top: 1rem;"></div>
                     </div>
                     
                     <div class="form-group">
@@ -502,51 +578,60 @@ try {
                 </form>
             </div>
 
-            <!-- Right: Personal History -->
-            <div class="card">
-                <h2 class="card-title">Personal History</h2>
-                
-                <?php if (!empty($recent_entries)): ?>
-                    <div class="w3-responsive">
-                        <table class="history-table">
-                            <thead>
-                                <tr>
-                                    <th>Repository</th>
-                                    <th>Date</th>
-                                    <th>Hours</th>
-                                    <th>Description</th>
-                                    <th></th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <?php foreach ($recent_entries as $entry): ?>
-                                    <tr>
-                                        <td class="repo-name"><?= htmlspecialchars($entry['app_name']) ?></td>
-                                        <td class="date-text"><?= date('Y-m-d', strtotime($entry['work_date'])) ?></td>
-                                        <td class="hours-text"><?= number_format($entry['duration'], 1) ?></td>
-                                        <td class="description-text">
-                                            <?php if ($entry['description']): ?>
-                                                <?= htmlspecialchars($entry['description']) ?>
-                                            <?php else: ?>
-                                                <span style="color: #CCC;">No description</span>
-                                            <?php endif; ?>
-                                        </td>
-                                        <td>
-                                            <a href="#" class="btn-edit">Edit</a>
-                                        </td>
-                                    </tr>
-                                <?php endforeach; ?>
-                            </tbody>
-                        </table>
-                    </div>
-                <?php else: ?>
-                    <div class="empty-state">
-                        <p>No entries yet. Start logging your hours!</p>
-                    </div>
-                <?php endif; ?>
-            </div>
         </div>
     </div>
+
+    
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script>
+        let dateInput, inlineCalendar;
+        const currentDate = "<?= isset($_POST['work_date']) && !empty($_POST['work_date']) ? htmlspecialchars($_POST['work_date']) : (isset($_SESSION['last_logged_date']) ? htmlspecialchars($_SESSION['last_logged_date']) : date('Y-m-d')) ?>";
+        const inputValue = document.getElementById('work_date') ? document.getElementById('work_date').value || currentDate : currentDate;
+        
+        inlineCalendar = flatpickr("#calendar-display", {
+            inline: true,
+            dateFormat: "Y-m-d",
+            maxDate: "today",
+            defaultDate: inputValue,
+            allowInput: false,
+            theme: "default",
+            onChange: function(selectedDates, dateStr, instance) {
+                if (dateInput) {
+                    dateInput.setDate(dateStr, false);
+                }
+                instance.redraw();
+            }
+        });
+        
+        dateInput = flatpickr("#work_date", {
+            dateFormat: "Y-m-d",
+            maxDate: "today",
+            defaultDate: inputValue,
+            allowInput: false,
+            clickOpens: false,
+            theme: "default",
+            onChange: function(selectedDates, dateStr, instance) {
+                if (inlineCalendar) {
+                    inlineCalendar.setDate(dateStr, false);
+                    inlineCalendar.redraw();
+                }
+            }
+        });
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            if (inputValue && inlineCalendar) {
+                inlineCalendar.setDate(inputValue, false);
+                setTimeout(function() {
+                    inlineCalendar.redraw();
+                }, 100);
+            }
+        });
+        
+        if (inputValue && inlineCalendar) {
+            inlineCalendar.setDate(inputValue, false);
+            inlineCalendar.redraw();
+        }
+    </script>
 
 </body>
 </html>

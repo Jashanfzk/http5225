@@ -1,6 +1,4 @@
 <?php
-// index.php - Combined HTML and JS from index.html and js/script.js
-// This file was created to provide the same output as index.html + js/script.js
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -10,12 +8,12 @@
     <title>Applications | BrickMMO</title>
     <link rel="icon" type="image/x-icon" href="./assets/BrickMMO_Logo_Coloured.png" />
     
-    <!-- Google Icons -->
+    
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&icon_names=arrow_forward" />
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     
-    <!-- CSS Styling -->
+    
     <link rel="stylesheet" href="./css/style.css">
 
 </head>
@@ -23,19 +21,19 @@
 
 <body>
 
-  <!-- header section -->
+  
   <header>
-    <!-- container for desktop header section, including logo and horizontal nav -->
+    
     <nav id="desktop-nav">
 
-      <!-- container for logo -->
+      
       <div class="logo">
         <a href="index.php">
           <img src="./assets/BrickMMO_Logo_Coloured.png" alt="brickmmo logo" width="80px">
         </a>
       </div>
 
-      <!-- container for menu links -->
+      
       <div>
         <ul class="nav-links">
           <li><a href="https://brickmmo.com/">BrickMMo Main Site</a></li>
@@ -48,7 +46,7 @@
       <h1>BrickMMO Applications</h1>
       <p>A place for all BrickMMO Applications</p>
 
-      <!-- Search Bar -->
+      
       <div class="search-container">
         <div class="search-box">
           <i class="fas fa-search search-icon"></i>
@@ -73,25 +71,25 @@
 
   </header>
 
-  <!-- main section -->
+  
   <main>
 
     <section id="applications">
-      <!-- Results Info -->
+      
       <div id="search-info" style="display: none;">
         <p id="search-results-text"></p>
       </div>
       <div class="applications-container" id="repo-container">
-        <!-- Repositories will be injected here dynamically using Javascript -->
+        
       </div>
-      <!-- Pagination -->
+      
       <div id="pagination"></div>
 
     </section>
       
   </main>
 
-  <!-- footer section -->
+  
 
   <footer>
     <div class="footer-container">
@@ -110,11 +108,8 @@
 
   </footer>
 
-  <!-- Inline JavaScript (originally in js/script.js) -->
+  
   <script>
-  // targetting the hamburger links and hamburger icon
-  // will either add or remove the open class to the menu and icon
-
   function toggleMenu() {
     const menu = document.querySelector(".hamburger-links");
     const icon = document.querySelector(".hamburger-icon");
@@ -123,7 +118,6 @@
     icon.classList.toggle("active");
   }
 
-  // Dynamic GitHub Repository Fetching
   const repoContainer = document.getElementById("repo-container"); 
   const paginationContainer = document.getElementById("pagination");
   const githubUsername = "brickmmo"; 
@@ -135,7 +129,6 @@
   const searchInfo = document.getElementById("search-info");
   const searchResultsText = document.getElementById("search-results-text");
 
-  // Fetch All Repositories with Pagination Support
   async function fetchRepos(page = 1) {
     try {
       const response = await fetch(`https://api.github.com/users/${githubUsername}/repos?per_page=200&page=${page}`);
@@ -149,12 +142,10 @@
 
       allRepos = allRepos.concat(repos);
 
-      // If 100 repos were fetched, there might be more pages
       if (repos.length === 100) {
-        // Recursively fetch next pages
         await fetchRepos(page + 1); 
       } else {
-        filteredRepos = [...allRepos]; // Initialize filtered repos
+        filteredRepos = [...allRepos];
         renderRepos();
         setupSearch();
       }
@@ -164,7 +155,6 @@
     }
   }
 
-  // Search and Filter Functionality
   function setupSearch() {
     const searchInput = document.getElementById('search-input');
     const clearBtn = document.getElementById('clear-search');
@@ -172,7 +162,6 @@
     const filterLanguage = document.getElementById('filter-language');
     const filterDescription = document.getElementById('filter-description');
 
-    // Search input event listener with debouncing
     let searchTimeout;
     searchInput.addEventListener('input', (e) => {
       clearTimeout(searchTimeout);
@@ -181,29 +170,25 @@
       }, 300);
     });
 
-    // Clear search functionality
     clearBtn.addEventListener('click', () => {
       searchInput.value = '';
       performSearch('');
     });
 
-    // Filter checkbox listeners
     [filterName, filterLanguage, filterDescription].forEach(checkbox => {
       checkbox.addEventListener('change', () => {
         performSearch(searchInput.value.trim());
       });
     });
 
-    // Show/hide clear button
     searchInput.addEventListener('input', (e) => {
       clearBtn.style.display = e.target.value.trim() ? 'block' : 'none';
     });
   }
 
-  // Perform search based on current filters and search term
   function performSearch(searchTerm) {
     currentSearchTerm = searchTerm.toLowerCase();
-    currentPage = 1; // Reset to first page
+    currentPage = 1;
     
     if (!searchTerm) {
       filteredRepos = [...allRepos];
@@ -216,17 +201,14 @@
       filteredRepos = allRepos.filter(repo => {
         let matches = false;
         
-        // Search in repository name
         if (nameFilter && repo.name.toLowerCase().includes(currentSearchTerm)) {
           matches = true;
         }
         
-        // Search in primary language
         if (languageFilter && repo.language && repo.language.toLowerCase().includes(currentSearchTerm)) {
           matches = true;
         }
         
-        // Search in description
         if (descriptionFilter && repo.description && repo.description.toLowerCase().includes(currentSearchTerm)) {
           matches = true;
         }
@@ -234,7 +216,6 @@
         return matches;
       });
       
-      // Show search results info
       searchInfo.style.display = 'block';
       searchResultsText.textContent = `Found ${filteredRepos.length} repositories matching "${searchTerm}"`;
     }
@@ -242,7 +223,6 @@
     renderRepos();
   }
 
-  // Render Repositories with Pagination (updated to use filtered repos)
   async function renderRepos() {
     repoContainer.innerHTML = ""; 
     const start = (currentPage - 1) * perPage;
@@ -262,7 +242,6 @@
       const repoCard = document.createElement("div");
       repoCard.classList.add("app-card");
 
-      // Highlight search terms in the display
       const highlightedName = highlightSearchTerm(repo.name, currentSearchTerm);
       const highlightedDescription = highlightSearchTerm(repo.description || "No description available", currentSearchTerm);
       const highlightedLanguages = highlightSearchTerm(languages || "N/A", currentSearchTerm);
@@ -283,7 +262,6 @@
     renderPagination();
   }
 
-  // Highlight search terms
   function highlightSearchTerm(text, searchTerm) {
     if (!searchTerm || !text) return text;
     
@@ -291,7 +269,6 @@
     return text.replace(regex, '<mark>$1</mark>');
   }
 
-  // Fetch Languages for Each Repo
   async function fetchLanguages(url) {
     try {
       const response = await fetch(url);
@@ -303,13 +280,11 @@
     }
   }
 
-  // Pagination Controls with Next/Prev and Page Count (updated to use filtered repos)
   function renderPagination() {
     paginationContainer.innerHTML = ""; 
     const totalPages = Math.ceil(filteredRepos.length / perPage);
 
     if (totalPages > 1) {
-      // Previous Button
       if (currentPage > 1) {
         const prevButton = document.createElement("button");
         prevButton.innerText = "Previous";
@@ -321,13 +296,11 @@
         paginationContainer.appendChild(prevButton);
       }
 
-      // Page Indicator
       const pageIndicator = document.createElement("span");
       pageIndicator.classList.add("page-indicator");
       pageIndicator.innerText = `${currentPage} / ${totalPages}`;
       paginationContainer.appendChild(pageIndicator);
 
-      // Next Button
       if (currentPage < totalPages) {
         const nextButton = document.createElement("button");
         nextButton.innerText = "Next";
@@ -341,7 +314,6 @@
     }
   }
 
-  // Load repositories when the page loads
   document.addEventListener("DOMContentLoaded", () => fetchRepos());
   </script>
 

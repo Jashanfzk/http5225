@@ -1,8 +1,5 @@
 <?php
-/**
- * Test Login Page
- * Simple login for testing without GitHub OAuth
- */
+
 
 require_once '../config/config.php';
 require_once '../config/database.php';
@@ -20,13 +17,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login'])) {
             $database = new Database();
             $db = $database->getConnection();
             
-            // Check if user exists, if not create a test user
             $user_stmt = $db->prepare("SELECT * FROM users WHERE login = ?");
             $user_stmt->execute([$username]);
             $user = $user_stmt->fetch();
             
             if (!$user) {
-                // Create a test user
                 $insert_stmt = $db->prepare("
                     INSERT INTO users (github_id, login, name, avatar_url, html_url, is_admin) 
                     VALUES (?, ?, ?, ?, ?, ?)
@@ -51,7 +46,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login'])) {
                 ];
             }
             
-            // Set session variables
             $_SESSION['user_id'] = $user['id'];
             $_SESSION['github_id'] = $user['github_id'] ?? rand(10000, 99999);
             $_SESSION['login'] = $user['login'];
@@ -59,7 +53,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login'])) {
             $_SESSION['avatar_url'] = $user['avatar_url'];
             $_SESSION['is_admin'] = $user['is_admin'];
             
-            // Redirect to dashboard
             redirect(BASE_URL . 'dashboard.php');
             
         } catch (Exception $e) {
@@ -136,7 +129,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login'])) {
                         <p class="text-subtext-light dark:text-subtext-dark">Enter any username to test the system</p>
                     </div>
                     
-                    <!-- Messages -->
+                    
                     <?php if ($error): ?>
                         <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
                             <?= htmlspecialchars($error) ?>
@@ -149,7 +142,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login'])) {
                         </div>
                     <?php endif; ?>
                     
-                    <!-- Login Form -->
+                    
                     <form method="POST" class="space-y-4">
                         <div>
                             <label class="block text-sm font-medium text-subtext-light dark:text-subtext-dark mb-1" for="username">Username</label>

@@ -1,32 +1,22 @@
 <?php
-/**
- * BrickMMO Timesheets - Home Page
- * Public repository listing with GitHub API integration and database statistics
- */
-
 require_once 'config/config.php';
 require_once 'config/database.php';
 
-// Pagination setup
 $perPage = 9;
 $currentPage = isset($_GET['page']) ? max(1, intval($_GET['page'])) : 1;
 
-// Get search parameters
 $searchTerm = isset($_GET['search']) ? trim($_GET['search']) : '';
 $filterName = isset($_GET['filter_name']) ? true : false;
 $filterLanguage = isset($_GET['filter_language']) ? true : false;
 $filterDescription = isset($_GET['filter_description']) ? true : false;
 
-// If no filters are set, default to name and language
 if (!$filterName && !$filterLanguage && !$filterDescription) {
     $filterName = true;
     $filterLanguage = true;
 }
 
-// Check if user is logged in
 $isLoggedIn = isset($_SESSION['user_id']) && !empty($_SESSION['user_id']);
 
-// Check if user is Jashanpreet Singh Gill (only authorized admin)
 $isAuthorizedAdmin = false;
 if ($isLoggedIn) {
     try {
@@ -38,17 +28,13 @@ if ($isLoggedIn) {
             $isAuthorizedAdmin = true;
         }
     } catch (Exception $e) {
-        // Silently fail
     }
 }
-
-// No live GitHub calls here anymore; public listing reads from database only
 
 try {
     $database = new Database();
     $db = $database->getConnection();
     
-    // Build filters and fetch active repositories from DB with stats
     $conditions = ['a.is_active = 1'];
     $params = [];
     if (!empty($searchTerm)) {
@@ -63,7 +49,6 @@ try {
     }
     $whereSql = !empty($conditions) ? ('WHERE ' . implode(' AND ', $conditions)) : '';
 
-    // Total count for pagination
     $countSql = "SELECT COUNT(*) FROM applications a $whereSql";
     $countStmt = $db->prepare($countSql);
     $countStmt->execute($params);
@@ -71,8 +56,6 @@ try {
     $totalPages = max(1, (int) ceil($totalRepos / $perPage));
     $currentPage = min($currentPage, $totalPages);
     $offset = ($currentPage - 1) * $perPage;
-
-    // Fetch page of repos with stats
     $dataSql = "
         SELECT a.*, 
                COUNT(DISTINCT h.user_id) AS contributor_count,
@@ -110,7 +93,6 @@ try {
     $totalPages = 1;
 }
 
-// Function to highlight search terms
 function highlightSearchTerm($text, $searchTerm) {
     if (empty($searchTerm) || empty($text)) {
         return htmlspecialchars($text);
@@ -120,7 +102,6 @@ function highlightSearchTerm($text, $searchTerm) {
     return $highlighted;
 }
 
-// Build query string for pagination
 function buildQueryString($params, $exclude = []) {
     $filtered = [];
     foreach ($params as $k => $v) {
@@ -148,26 +129,27 @@ $baseQuery = [
     <title>Applications | BrickMMO</title>
     <link rel="icon" type="image/x-icon" href="./assets/BrickMMO_Logo_Coloured.png" />
     
-    <!-- Google Icons -->
+    
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&icon_names=arrow_forward" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
     
-    <!-- CSS Styling -->
+    
     <link rel="stylesheet" href="./css/style.css">
 </head>
 <body>
-    <!-- header section -->
+    
     <header>
-        <!-- container for desktop header section, including logo and horizontal nav -->
+        
         <nav id="desktop-nav">
-            <!-- container for logo -->
+            
             <div class="logo">
                 <a href="index.php">
                     <img src="./assets/BrickMMO_Logo_Coloured.png" alt="brickmmo logo" width="80px">
                 </a>
             </div>
 
-            <!-- container for menu links -->
+            
             <div>
                 <ul class="nav-links">
                     <li><a href="https://brickmmo.com/">BrickMMo Main Site</a></li>
@@ -186,7 +168,7 @@ $baseQuery = [
             <h1>BrickMMO Applications</h1>
             <p>A place for all BrickMMO Applications</p>
 
-            <!-- Search Bar -->
+            
             <div class="search-container">
                 <form method="GET" action="index.php" id="search-form">
                     <div class="search-box">
@@ -212,17 +194,17 @@ $baseQuery = [
         </section>
     </header>
     
-    <!-- main section -->
+    
     <main>
         <section id="applications">
-            <!-- Results Info -->
+            
             <div id="search-info" style="margin-bottom: 20px; padding: 10px 15px; background-color: <?php echo !empty($searchTerm) ? '#e3f2fd' : 'transparent'; ?>; border-radius: 8px; display: <?php echo !empty($searchTerm) ? 'block' : 'none'; ?>;">
                 <?php if (!empty($searchTerm)): ?>
                     <p id="search-results-text" style="margin: 0; font-size: 16px;"><i class="fas fa-search" style="margin-right: 8px; color: #3498db;"></i> Found <strong><?php echo $totalRepos; ?></strong> repositories matching "<strong><?php echo htmlspecialchars($searchTerm); ?></strong>"</p>
                 <?php endif; ?>
             </div>
             
-            <!-- Repository Count Info -->
+            
             <div style="margin-bottom: 20px; padding: 12px 15px; background-color: #f8f9fa; border-left: 4px solid #DD5A3A; border-radius: 4px;">
                 <p style="margin: 0; font-size: 15px; color: #333;">
                     <i class="fas fa-folder" style="margin-right: 8px; color: #DD5A3A;"></i>
@@ -235,8 +217,6 @@ $baseQuery = [
             
             <div class="applications-container" id="repo-container">
                 <?php 
-                // Repositories already fetched and paginated above
-                
                 if (empty($repositories)): ?>
                     <div class="error-message" style="text-align: center; padding: 40px; background-color: #fff3f3; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); width: 100%; max-width: 600px; margin: 0 auto;">
                         <img src="./assets/placeholder.png" alt="No repositories" style="width: 120px; height: auto; margin-bottom: 20px;">
@@ -256,7 +236,6 @@ $baseQuery = [
                           $repoLanguage = $repo['language'] ?? 'N/A';
                           $isDemoRepo = isset($repo['is_demo']) && $repo['is_demo'];
                           
-                          // Set special styling for demo repos
                           $cardStyle = $isDemoRepo ? "box-shadow: 0 0 0 2px #e74c3c;" : "";
                         ?>
                         <div class="app-card" style="<?php echo $cardStyle; ?> position: relative; overflow: hidden; display: flex; flex-direction: column; height: 100%;">
@@ -296,7 +275,7 @@ $baseQuery = [
                 <?php endif; ?>
             </div>
             
-            <!-- Pagination -->
+            
             <div id="pagination">
                 <?php if ($totalPages > 1): ?>
                     <?php if ($currentPage > 1): ?>
@@ -313,7 +292,7 @@ $baseQuery = [
         </section>
     </main>
     
-    <!-- footer section -->
+    
     <footer>
         <div class="footer-container">
             <div class="social-icons">
@@ -332,7 +311,6 @@ $baseQuery = [
 
     <script src="https://cdn.brickmmo.com/bar@1.0.0/bar.js"></script>
     <script>
-        // Auto-submit form when checkboxes change
         document.querySelectorAll('input[type="checkbox"]').forEach(function(checkbox) {
             checkbox.addEventListener('change', function() {
                 document.getElementById('search-form').submit();

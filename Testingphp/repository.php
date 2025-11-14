@@ -1,8 +1,5 @@
 <?php
-/**
- * Repository Details Page
- * Shows detailed information about a specific repository
- */
+
 
 require_once 'config/config.php';
 require_once 'config/database.php';
@@ -18,7 +15,6 @@ try {
     $database = new Database();
     $db = $database->getConnection();
     
-    // Get repository from database
     $stmt = $db->prepare("SELECT * FROM applications WHERE name = ? AND is_active = 1");
     $stmt->execute([$repoName]);
     $repo = $stmt->fetch();
@@ -27,7 +23,6 @@ try {
         redirect(BASE_URL . 'index.php?error=repository_not_found');
     }
     
-    // Get repository statistics
     $stats_stmt = $db->prepare("
         SELECT 
             COUNT(DISTINCT user_id) as contributors,
@@ -38,8 +33,6 @@ try {
     ");
     $stats_stmt->execute([$repo['id']]);
     $stats = $stats_stmt->fetch();
-    
-    // Get top contributors with additional information
     $contributors_stmt = $db->prepare("
         SELECT 
             u.id as user_id,
@@ -72,8 +65,6 @@ try {
     error_log("Database error: " . $e->getMessage());
     redirect(BASE_URL . 'index.php?error=database_error');
 }
-
-// Public details page no longer calls GitHub; we rely on DB data only
 ?>
 
 <!DOCTYPE html>
@@ -572,7 +563,7 @@ try {
             }
         }
         
-        /* Chart sections */
+        
         .chart-section {
             background: white;
             padding: 2rem;
@@ -596,7 +587,7 @@ try {
             position: relative;
         }
         
-        /* README section */
+        
         .readme-section {
             background: white;
             padding: 2rem;
@@ -646,7 +637,7 @@ try {
             font-size: 0.9em;
         }
         
-        /* Commit by contributor section */
+        
         .contributor-commits {
             margin-top: 2rem;
             border-top: 1px solid #EEE;
@@ -680,7 +671,7 @@ try {
             font-size: 0.95rem;
         }
         
-        /* Responsive adjustments */
+        
         @media (max-width: 768px) {
             .stats-container {
                 grid-template-columns: 1fr;
@@ -714,7 +705,7 @@ try {
     </style>
 </head>
 <body>
-    <!-- Header -->
+    
     <header class="header">
         <div class="header-content">
             <div>
@@ -736,7 +727,7 @@ try {
     </header>
 
     <div class="page-container">
-        <!-- Header -->
+        
         <div class="page-header">
             <h1 class="page-title"><?= htmlspecialchars($repo['name']) ?></h1>
             <p class="page-subtitle">
@@ -749,7 +740,7 @@ try {
             <?php endif; ?>
         </div>
         
-        <!-- Statistics Cards -->
+        
         <div class="stats-container">
             <div class="stat-card">
                 <div class="stat-label">Total Hours</div>
@@ -767,9 +758,9 @@ try {
             </div>
         </div>
         
-        <!-- Hours/Contributors/Entries shown above; GitHub-specific stats removed to avoid live API calls -->
         
-        <!-- Top Contributors Section -->
+        
+        
         <div class="contributors-section">
             <div class="section-header">
                 <h2 class="section-title">Top Contributors</h2>
@@ -835,20 +826,20 @@ try {
             <?php endif; ?>
         </div>
         
-        <!-- GitHub Statistics removed (no direct API calls) -->
         
-        <!-- Languages section removed (no direct API calls) -->
         
-        <!-- Recent commits removed (no direct API calls) -->
         
-        <!-- Branches section removed (no direct API calls) -->
         
-        <!-- GitHub contributors removed (no direct API calls) -->
         
-        <!-- Data Visualization Charts -->
-        <!-- Charts removed (no direct API calls) -->
         
-        <!-- README Section -->
+        
+        
+        
+        
+        
+        
+        
+        
         <?php if (!empty($readmeContent)): ?>
             <div class="readme-section">
                 <h2 class="chart-title"><i class="fas fa-file-alt"></i> README</h2>
@@ -860,21 +851,17 @@ try {
     </div>
     
     <script>
-    // Initialize contributor sorting
     document.addEventListener('DOMContentLoaded', function() {
         initContributorSorting();
     });
     
-    // Convert PHP contributors array to JavaScript
     const contributorsData = <?php echo json_encode($top_contributors); ?>;
     
     function initContributorSorting() {
         const sortDropdown = document.getElementById('contributor-sort');
         if (sortDropdown) {
-            // Initial sort
             renderContributors(contributorsData, 'hours');
             
-            // Add event listener for sort changes
             sortDropdown.addEventListener('change', function() {
                 renderContributors(contributorsData, this.value);
             });
@@ -885,7 +872,6 @@ try {
         const container = document.getElementById('contributor-cards');
         if (!container) return;
         
-        // Sort the contributors based on the selected option
         const sortedContributors = [...contributors].sort((a, b) => {
             switch (sortBy) {
                 case 'hours':
@@ -901,10 +887,7 @@ try {
             }
         });
         
-        // Clear container
         container.innerHTML = '';
-        
-        // Rebuild the contributor cards
         sortedContributors.forEach(contributor => {
             const card = document.createElement('div');
             card.className = 'contributor-card';

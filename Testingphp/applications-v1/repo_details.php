@@ -19,7 +19,6 @@ if (isset($_GET['repo'])) {
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
         
-        // Return null if request failed or returned error
         if ($response === false || $httpCode >= 400) {
             error_log("GitHub API Error: HTTP $httpCode for URL: $url");
             return null;
@@ -27,7 +26,6 @@ if (isset($_GET['repo'])) {
         
         $data = json_decode($response, true);
         
-        // Ensure we return null for invalid JSON or error responses
         if (json_last_error() !== JSON_ERROR_NONE) {
             error_log("JSON Decode Error: " . json_last_error_msg() . " for URL: $url");
             return null;
@@ -44,14 +42,12 @@ if (isset($_GET['repo'])) {
     $mergesUrl = "$repoUrl/pulls?state=closed";
     $clonesUrl = "$repoUrl/traffic/clones";
     $languagesUrl = "$repoUrl/languages";
-    $issuesUrl = "$repoUrl/issues?state=open";
     $readmeUrl = "$repoUrl/readme";
 
     $repoData = fetchGitHubData($repoUrl, $headers);
     
-    // Check if main repository data was fetched successfully
     if (!$repoData || !is_array($repoData)) {
-        die("<h1>Error</h1><p>Could not fetch repository data. Please check if the repository exists or try again later.</p><p>GitHub API might be rate limited. <a href='index.php'>Go back</a></p>");
+        die("<h1>Error</h1><p>Could not fetch repository data. Please check if the repository exists or try again later.</p><p>GitHub API might be rate limited. <a href='../index.php'>Go back</a></p>");
     }
     
     $commitsData = fetchGitHubData($commitsUrl, $headers);
@@ -61,13 +57,11 @@ if (isset($_GET['repo'])) {
     $mergesData = fetchGitHubData($mergesUrl, $headers);
     $clonesData = fetchGitHubData($clonesUrl, $headers);
     $languagesData = fetchGitHubData($languagesUrl, $headers);
-    $issuesData = fetchGitHubData($issuesUrl, $headers);
     $readmeData = fetchGitHubData($readmeUrl, $headers);
 
     $readmeContent = '';
     if ($readmeData && isset($readmeData['content'])) {
         $readmeContent = base64_decode($readmeData['content']);
-        // Convert markdown to basic HTML (simple conversion)
         $readmeContent = htmlspecialchars($readmeContent);
         $readmeContent = preg_replace('/^# (.+)$/m', '<h1>$1</h1>', $readmeContent);
         $readmeContent = preg_replace('/^## (.+)$/m', '<h2>$1</h2>', $readmeContent);
@@ -77,31 +71,7 @@ if (isset($_GET['repo'])) {
         $readmeContent = nl2br($readmeContent);
     }
 
-    // Process issues data
-    $openIssuesCount = 0;
-    $bugIssuesCount = 0;
-    $goodFirstIssueCount = 0;
-
-    if ($issuesData && is_array($issuesData)) {
-        $openIssuesCount = count($issuesData);
-        
-        foreach ($issuesData as $issue) {
-            $labels = $issue['labels'] ?? [];
-            foreach ($labels as $label) {
-                $labelName = strtolower($label['name']);
-                if (strpos($labelName, 'bug') !== false) {
-                    $bugIssuesCount++;
-                }
-                if (strpos($labelName, 'good first issue') !== false || strpos($labelName, 'good-first-issue') !== false) {
-                    $goodFirstIssueCount++;
-                }
-            }
-        }
-    }
-
     $latestCommit = isset($commitsData[0]) ? $commitsData[0]['commit']['author'] : null;
-
-    // Enhanced contributors with profile pictures
     $contributors = [];
     if ($contributorsData && is_array($contributorsData)) {
         foreach ($contributorsData as $contributor) {
@@ -120,10 +90,7 @@ if (isset($_GET['repo'])) {
     $forksCount = count($forksData ?? []);
     $mergesCount = count($mergesData ?? []);
     $clonesCount = $clonesData['count'] ?? 'N/A';
-    // Ensure languages is always an array
     $languages = (is_array($languagesData) && !empty($languagesData)) ? $languagesData : [];
-
-    // Process commit activity by contributor
     $commitsByContributor = [];
     if ($commitsData && is_array($commitsData)) {
         foreach ($commitsData as $commit) {
@@ -156,12 +123,12 @@ if (isset($_GET['repo'])) {
 <body>
     <header>
         <div class="logo">
-        <a href="index.php">
+            <a href="../index.php">
                 <img src="./assets/BrickMMO_Logo_Coloured.png" alt="brickmmo logo" width="80px">
             </a>
         </div>
         <nav>
-            <a href="index.php" class="return-btn">&larr; Return</a>
+            <a href="../index.php" class="return-btn">&larr; Return</a>
         </nav>
     </header>
     <main>
@@ -204,19 +171,12 @@ if (isset($_GET['repo'])) {
                         <li><strong>Clones:</strong> <span id="clones"> <?= $clonesCount ?> </span></li>
                         <li><strong>Languages Used:</strong> 
                             <span id="languages"> <?= implode(', ', array_keys($languages)) ?: 'N/A' ?> </span>
-                            <?php if (!empty($languages)): ?>
-                            <?php endif; ?>
-                        </li>
-                        <li><strong>Issues:</strong>
-                            <div class="issues-container">
-                            </div>
                         </li>
                     </ul>
                 </div>
             </div>
         </section>
 
-        <!-- Insert Graphs Section Here -->
         <section id="graphs-section" style="max-width:1200px;margin:30px auto 0 auto;">
             <div style="background:#fff;padding:40px;border-radius:12px;box-shadow:0 2px 12px rgba(0,0,0,0.08);margin-bottom:30px;border:1px solid #e0e0e0;">
                 <h3 style="color:#ff5b00;margin-bottom:20px;font-weight:600;"><i class="fas fa-chart-pie"></i> Language Distribution</h3>
@@ -247,7 +207,6 @@ if (isset($_GET['repo'])) {
             </div>
         </section>
 
-        <!-- README Section -->
         <?php if (!empty($readmeContent)): ?>
         <section id="readme-section">
             <h3><i class="fas fa-file-alt"></i> README</h3>
@@ -271,11 +230,9 @@ if (isset($_GET['repo'])) {
     </footer>
 
     <script>
-    // Language data from PHP
     const languageData = <?= json_encode($languages) ?>;
     const commitData = <?= json_encode($commitsByContributor) ?>;
 
-    // Create Language Distribution Pie Chart
     function createLanguageChart() {
         const ctx = document.getElementById('languageChart').getContext('2d');
         if (!ctx) return;
@@ -325,7 +282,6 @@ if (isset($_GET['repo'])) {
         });
     }
 
-    // Create Commit Activity Bar Chart
     function createCommitChart() {
         const ctx = document.getElementById('commitChart').getContext('2d');
         if (!ctx) return;
@@ -360,7 +316,6 @@ if (isset($_GET['repo'])) {
         });
     }
 
-    // Render charts on page load
     window.addEventListener('DOMContentLoaded', function() {
         createLanguageChart();
         createCommitChart();

@@ -1,29 +1,22 @@
 <?php
-/**
- * Admin - Contributors Overview
- * Shows only users who have logged hours, with totals and top repositories.
- */
+
 
 require_once __DIR__ . '/../config/config.php';
 require_once __DIR__ . '/../config/database.php';
 
-// Require admin access
 requireAdmin();
 
 try {
     $db = (new Database())->getConnection();
 
-    // Header totals (all time)
     $totalHours = (float)($db->query("SELECT COALESCE(SUM(h.duration),0) FROM hours h")->fetchColumn());
     $totalContributors = (int)($db->query("SELECT COUNT(DISTINCT h.user_id) FROM hours h")->fetchColumn());
     $totalEntries = (int)($db->query("SELECT COUNT(*) FROM hours h")->fetchColumn());
 
-    // Pagination
     $cpage = isset($_GET['cpage']) ? max(1, (int)$_GET['cpage']) : 1;
     $cperPage = 8;
     $coffset = ($cpage - 1) * $cperPage;
 
-    // Contributors aggregate (only those with logged hours)
     $contribStmt = $db->query(
         "SELECT u.id, u.login, u.name, u.avatar_url,
                 COUNT(h.id) AS entries,
@@ -40,7 +33,6 @@ try {
     $totalContribPages = $cperPage > 0 ? (int)ceil($totalContribRows / $cperPage) : 1;
     $contributors = array_slice($allContributors, $coffset, $cperPage);
 
-    // For top repos per visible contributor (limit 3)
     $contributorsTopRepos = [];
     foreach ($contributors as $c) {
         $cid = (int)$c['id'];

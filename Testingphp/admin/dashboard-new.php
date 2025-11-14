@@ -1,15 +1,11 @@
 <?php
-/**
- * Modern Admin Dashboard - Repositories Management
- * Clean UI matching the BrickMMO design system
- */
+
 require_once __DIR__ . '/../config/config.php';
 require_once __DIR__ . '/../config/database.php';
 if (session_status() !== PHP_SESSION_ACTIVE) {
     session_start();
 }
 
-// If a logged-in user requests to become admin (only for Jashanpreet Singh Gill)
 if (isset($_POST['become_admin'])) {
     if (!function_exists('isLoggedIn') || !isLoggedIn()) {
         $_SESSION['flash'] = ['type' => 'error', 'message' => 'You must be signed in to become admin.'];
@@ -19,13 +15,11 @@ if (isset($_POST['become_admin'])) {
 
     try {
         $db = (new Database())->getConnection();
-        // Check if user is Jashanpreet Singh Gill
         $stmt = $db->prepare('SELECT name FROM users WHERE id = ?');
         $stmt->execute([$_SESSION['user_id']]);
         $user = $stmt->fetch();
         
         if ($user && isset($user['name']) && $user['name'] === 'Jashanpreet Singh Gill') {
-            // Only allow Jashanpreet Singh Gill to grant admin access
             $updateStmt = $db->prepare('UPDATE users SET is_admin = 1 WHERE id = ?');
             $updateStmt->execute([$_SESSION['user_id']]);
             $_SESSION['is_admin'] = true;
@@ -41,7 +35,6 @@ if (isset($_POST['become_admin'])) {
     exit;
 }
 
-// Toggle handling (server-side form)
 if (isset($_POST['action']) && $_POST['action'] === 'toggle' && isset($_POST['repo_id'])) {
     if (!isset($_SESSION['is_admin']) || $_SESSION['is_admin'] !== true) {
         $_SESSION['flash'] = ['type' => 'error', 'message' => 'Unauthorized'];
@@ -62,7 +55,6 @@ if (isset($_POST['action']) && $_POST['action'] === 'toggle' && isset($_POST['re
     exit;
 }
 
-// Admin check - Only allow Jashanpreet Singh Gill
 $isAdmin = false;
 if (isset($_SESSION['user_id'])) {
     try {
@@ -71,15 +63,12 @@ if (isset($_SESSION['user_id'])) {
         $stmt->execute([$_SESSION['user_id']]);
         $user = $stmt->fetch();
         
-        // Only allow Jashanpreet Singh Gill
         if ($user && isset($user['name']) && $user['name'] === 'Jashanpreet Singh Gill') {
-            // Auto-grant admin access
             $updateStmt = $db->prepare('UPDATE users SET is_admin = 1 WHERE id = ?');
             $updateStmt->execute([$_SESSION['user_id']]);
             $_SESSION['is_admin'] = true;
             $isAdmin = true;
         } else {
-            // Not authorized - redirect
             $_SESSION['flash'] = ['type' => 'error', 'message' => 'Access denied. Only authorized administrators can access this page.'];
             header('Location: ../index.php?error=access_denied');
             exit;
@@ -90,17 +79,14 @@ if (isset($_SESSION['user_id'])) {
         exit;
     }
 } else {
-    // Not logged in - redirect
     header('Location: ../index.php?error=access_denied');
     exit;
 }
 
-// Handle Import from GitHub
 if ($isAdmin && isset($_POST['import_repos'])) {
     try {
         $db = (new Database())->getConnection();
         
-        // Fetch repositories from GitHub API
         $headers = ["User-Agent: BrickMMO-Timesheets"];
         
         function fetchGitHubData($url, $headers) {
@@ -120,7 +106,6 @@ if ($isAdmin && isset($_POST['import_repos'])) {
             return json_decode($response, true);
         }
         
-        // Fetch organization repositories
         $repos_url = "https://api.github.com/orgs/" . GITHUB_ORG . "/repos?per_page=100&sort=name";
         $repositories_data = fetchGitHubData($repos_url, $headers);
         
@@ -132,7 +117,6 @@ if ($isAdmin && isset($_POST['import_repos'])) {
             
             foreach ($repositories_data as $repo) {
                 try {
-                    // Check if repository already exists
                     $check_stmt = $db->prepare("SELECT id FROM applications WHERE github_id = ?");
                     $check_stmt->execute([$repo['id']]);
                     $existing = $check_stmt->fetch();
@@ -141,7 +125,6 @@ if ($isAdmin && isset($_POST['import_repos'])) {
                     $primary_language = $repo['language'] ?? 'N/A';
                     
                     if ($existing) {
-                        // Update existing repository
                         $update_stmt = $db->prepare("
                             UPDATE applications SET 
                                 name = ?, 
@@ -168,7 +151,6 @@ if ($isAdmin && isset($_POST['import_repos'])) {
                         
                         $updated_count++;
                     } else {
-                        // Insert new repository
                         $insert_stmt = $db->prepare("
                             INSERT INTO applications (github_id, name, full_name, description, html_url, clone_url, language, languages, visibility, is_active) 
                             VALUES (?, ?, ?, ?, ?, ?, ?, '{}', ?, 1)
@@ -212,33 +194,27 @@ if ($isAdmin && isset($_POST['import_repos'])) {
     exit;
 }
 
-// Get search parameter
 $searchTerm = isset($_GET['search']) ? trim($_GET['search']) : '';
 
-// Get filter parameter (visible/not_visible or null for all)
-// Default to 'visible' if no filter is specified
 $filter = isset($_GET['filter']) ? $_GET['filter'] : 'visible';
 if ($filter === 'visible') {
     $isActiveFilter = 1;
 } elseif ($filter === 'not_visible') {
     $isActiveFilter = 0;
 } else {
-    $isActiveFilter = null; // Show all
+    $isActiveFilter = null;
 }
 
-// Pagination settings
 $page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
 $per_page = 8;
 $offset = ($page - 1) * $per_page;
 
-// Fetch repositories with pagination
 $repositories = [];
 $total_repos = 0;
 if ($isAdmin) {
     try {
         $db = (new Database())->getConnection();
         
-        // Build WHERE clause for filtering
         $whereConditions = [];
         $params = [];
         
@@ -255,13 +231,11 @@ if ($isAdmin) {
         
         $whereClause = !empty($whereConditions) ? "WHERE " . implode(" AND ", $whereConditions) : "";
         
-        // Count total repositories
         $countQuery = "SELECT COUNT(*) FROM applications " . $whereClause;
         $count_stmt = $db->prepare($countQuery);
         $count_stmt->execute($params);
         $total_repos = $count_stmt->fetchColumn();
         
-        // Fetch paginated repositories (fetch all then slice for compatibility)
         $query = "SELECT id, name, description, is_active, visibility
                  FROM applications 
                  $whereClause
@@ -271,8 +245,6 @@ if ($isAdmin) {
         $stmt->execute($params);
         $allRows = $stmt->fetchAll();
         $repositories = array_slice($allRows, $offset, $per_page);
-
-        // Final safety fallback: if we still have none but count > 0, ignore filters and show first page
         if (empty($repositories) && (int)$total_repos > 0) {
             $fallbackQuery = $db->query(
                 "SELECT id, name, description, is_active, visibility
@@ -313,7 +285,7 @@ $total_pages = ceil($total_repos / $per_page);
             color: #333;
         }
 
-        /* Header - Matching contributor.php style */
+        
         .header {
             background: white;
             border-bottom: 1px solid #E8D5CF;
@@ -356,7 +328,7 @@ $total_pages = ceil($total_repos / $per_page);
             text-decoration: underline;
         }
 
-        /* Main Content */
+        
         .container {
             max-width: 1600px;
             margin: 0 auto;
@@ -398,7 +370,7 @@ $total_pages = ceil($total_repos / $per_page);
             box-shadow: 0 4px 8px rgba(221, 90, 58, 0.2);
         }
 
-        /* Search Bar */
+        
         .search-container {
             background: white;
             border: 1px solid #E8D5CF;
@@ -434,7 +406,7 @@ $total_pages = ceil($total_repos / $per_page);
             outline: none;
         }
 
-        /* Filter Tabs */
+        
         .filter-tabs {
             display: flex;
             gap: 1rem;
@@ -467,7 +439,7 @@ $total_pages = ceil($total_repos / $per_page);
             border-color: #2C3E50;
         }
 
-        /* Repository Cards */
+        
         .repo-cards {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(700px, 1fr));
@@ -514,7 +486,7 @@ $total_pages = ceil($total_repos / $per_page);
             color: #666;
         }
 
-        /* Toggle Switch */
+        
         .toggle-switch {
             position: relative;
             width: 60px;
@@ -573,7 +545,7 @@ $total_pages = ceil($total_repos / $per_page);
             text-decoration: underline;
         }
 
-        /* Pagination */
+        
         .pagination {
             display: flex;
             justify-content: space-between;
@@ -606,7 +578,7 @@ $total_pages = ceil($total_repos / $per_page);
             font-size: 0.9375rem;
         }
 
-        /* Flash Messages */
+        
         .flash {
             padding: 1rem 1.5rem;
             border-radius: 8px;
@@ -626,7 +598,7 @@ $total_pages = ceil($total_repos / $per_page);
             border: 1px solid #F5C6CB;
         }
 
-        /* Empty State */
+        
         .empty-state {
             text-align: center;
             padding: 4rem 2rem;
@@ -648,7 +620,7 @@ $total_pages = ceil($total_repos / $per_page);
             font-size: 0.9375rem;
         }
 
-        /* Non-Admin State */
+        
         .access-denied {
             background: white;
             border: 1px solid #E8D5CF;
@@ -693,7 +665,7 @@ $total_pages = ceil($total_repos / $per_page);
             transform: translateY(-1px);
         }
 
-        /* Footer */
+        
         footer {
             background: white;
             border-top: 1px solid #E8D5CF;
@@ -735,7 +707,7 @@ $total_pages = ceil($total_repos / $per_page);
             margin: 0.25rem 0;
         }
         
-        /* Wrapper for sticky footer */
+        
         html, body {
             height: 100%;
         }
@@ -753,7 +725,7 @@ $total_pages = ceil($total_repos / $per_page);
             flex-shrink: 0;
         }
 
-        /* Responsive */
+        
         @media (max-width: 1400px) {
             .repo-cards {
                 grid-template-columns: repeat(auto-fill, minmax(600px, 1fr));
@@ -833,7 +805,7 @@ $total_pages = ceil($total_repos / $per_page);
 </head>
 <body>
 
-<!-- Header -->
+
 <header class="header">
     <div class="header-content">
         <div class="logo">
@@ -843,19 +815,31 @@ $total_pages = ceil($total_repos / $per_page);
         </div>
         
         <nav class="nav-tabs">
-            <a href="../index.php" class="nav-tab">Home</a>
-            <a href="dashboard-new.php" class="nav-tab active">Admin Dashboard</a>
-            <a href="contributors.php" class="nav-tab">Contributors</a>
+            <?php
+            $current_page = basename($_SERVER['PHP_SELF']);
+            $nav_items = [
+                ['url' => '../index.php', 'label' => 'Home', 'page' => 'index.php'],
+                ['url' => 'dashboard-new.php', 'label' => 'Admin Dashboard', 'page' => 'dashboard-new.php'],
+                ['url' => 'contributors.php', 'label' => 'Contributors', 'page' => 'contributors.php']
+            ];
+            
+            foreach ($nav_items as $item):
+                $is_active = ($current_page === $item['page']);
+                $class = "nav-tab" . ($is_active ? " active" : "");
+                $style = $is_active ? "text-decoration: underline;" : "";
+            ?>
+                <a href="<?= $item['url'] ?>" class="<?= $class ?>" style="<?= $style ?>"><?= $item['label'] ?></a>
+            <?php endforeach; ?>
             <?php if (isset($_SESSION['user_id'])): ?>
                 <a href="../auth/logout.php" class="nav-tab">Logout</a>
             <?php else: ?>
                 <a href="../auth/login.php" class="nav-tab">Login</a>
-        <?php endif; ?>
+            <?php endif; ?>
         </nav>
     </div>
 </header>
 
-<!-- Main Content -->
+
 <main class="container">
         <?php if (!empty($_SESSION['flash'])): $f = $_SESSION['flash']; unset($_SESSION['flash']); ?>
         <div class="flash <?= htmlspecialchars($f['type']) ?>">
@@ -868,7 +852,6 @@ $total_pages = ceil($total_repos / $per_page);
             <h2>Admin Access Required</h2>
             <p>You need administrator privileges to access the repository management dashboard.</p>
             <?php
-            // Only show button for Jashanpreet Singh Gill
             $showButton = false;
             if (isset($_SESSION['user_id'])) {
                 try {
@@ -880,7 +863,6 @@ $total_pages = ceil($total_repos / $per_page);
                         $showButton = true;
                     }
                 } catch (Exception $e) {
-                    // Silently fail
                 }
             }
             if ($showButton): ?>
@@ -891,7 +873,7 @@ $total_pages = ceil($total_repos / $per_page);
         </div>
         <?php else: ?>
 
-        <!-- Page Header -->
+        
         <div class="page-header">
             <h1 class="page-title">Repositories</h1>
             <form method="POST" style="display: inline;">
@@ -899,7 +881,7 @@ $total_pages = ceil($total_repos / $per_page);
             </form>
         </div>
 
-        <!-- Search Bar -->
+        
         <form method="GET" action="dashboard-new.php">
             <div class="search-container">
                 <svg class="search-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2">
@@ -916,7 +898,7 @@ $total_pages = ceil($total_repos / $per_page);
             </div>
         </form>
 
-        <!-- Filter Tabs -->
+        
         <div class="filter-tabs">
             <a href="?filter=visible<?= !empty($searchTerm) ? '&search=' . urlencode($searchTerm) : '' ?>" 
                class="filter-tab <?= $filter === 'visible' ? 'active' : '' ?>">Visible</a>
@@ -924,7 +906,7 @@ $total_pages = ceil($total_repos / $per_page);
                class="filter-tab <?= $filter === 'not_visible' ? 'active' : '' ?>">Not Visible</a>
         </div>
                             
-        <!-- Repository Cards -->
+        
         <div class="repo-cards">
             <?php if (empty($repositories)): ?>
                 <div class="empty-state">
@@ -957,11 +939,11 @@ $total_pages = ceil($total_repos / $per_page);
                     <?php endif; ?>
             </div>
 
-            <!-- Pagination -->
+            
             <?php if ($total_pages > 1): ?>
                 <div class="pagination">
                     <?php if ($page > 1): ?>
-                        <a href="?page=<?= $page - 1 ?><?= !empty($searchTerm) ? '&search=' . urlencode($searchTerm) : '' ?>" class="pagination-btn">← Previous</a>
+                        <a href="?page=<?= $page - 1 ?><?= !empty($filter) ? '&filter=' . urlencode($filter) : '' ?><?= !empty($searchTerm) ? '&search=' . urlencode($searchTerm) : '' ?>" class="pagination-btn">← Previous</a>
                     <?php endif; ?>
                     
                     <div class="pagination-info">
@@ -969,7 +951,7 @@ $total_pages = ceil($total_repos / $per_page);
                     </div>
                     
                     <?php if ($page < $total_pages): ?>
-                        <a href="?page=<?= $page + 1 ?><?= !empty($searchTerm) ? '&search=' . urlencode($searchTerm) : '' ?>" class="pagination-btn">Next →</a>
+                        <a href="?page=<?= $page + 1 ?><?= !empty($filter) ? '&filter=' . urlencode($filter) : '' ?><?= !empty($searchTerm) ? '&search=' . urlencode($searchTerm) : '' ?>" class="pagination-btn">Next →</a>
                     <?php endif; ?>
                 </div>
             <?php endif; ?>
@@ -977,7 +959,7 @@ $total_pages = ceil($total_repos / $per_page);
         <?php endif; ?>
 </main>
 
-<!-- Footer -->
+
 <footer>
     <div class="footer-container">
         <div class="social-icons">

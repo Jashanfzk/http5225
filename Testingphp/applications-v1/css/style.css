@@ -1,4 +1,4 @@
-/* General Styling */
+
 @import url('https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap');
 
 * {
@@ -7,7 +7,7 @@
     box-sizing: border-box;
 }
 
-/* Smooth Scrolling */
+
 html {
     scroll-behavior: smooth;
 }
@@ -22,7 +22,7 @@ body {
     text-align: center;
 }
 
-/* Header */
+
 header {
     background-color: #fff;
     padding: 20px;
@@ -31,12 +31,12 @@ header {
     align-items: center;
 }
 
-/* Logo */
+
 .logo img {
     width: 80px;
 }
 
-/* Navigation */
+
 nav {
     display: flex;
     justify-content: space-between;
@@ -65,7 +65,7 @@ nav {
     color: #ea5302;
 }
 
-/* Hero Section */
+
 #hero {
     padding: 50px 20px;
     text-align: center;
@@ -81,7 +81,7 @@ p {
     margin-top: 10px;
 }
 
-/* Search Container */
+
 .search-container {
     margin-top: 30px;
     max-width: 600px;
@@ -139,7 +139,7 @@ p {
     color: #ff5b00;
 }
 
-/* Search Filters */
+
 .search-filters {
     display: flex;
     justify-content: center;
@@ -166,12 +166,12 @@ p {
     accent-color: #ff5b00;
 }
 
-/* Main Section */
+
 main {
     padding: 30px 5%;
 }
 
-/* Applications Section */
+
 #applications {
     padding: 20px;
 }
@@ -183,7 +183,7 @@ main {
     justify-content: center;
 }
 
-/* Application Cards */
+
 .app-card {
     background-color: #fbeae1;
     padding: 20px;
@@ -216,7 +216,7 @@ main {
     gap: 10px;
 }
 
-/* Buttons */
+
 button {
     font-weight: 600;
     padding: 10px;
@@ -245,7 +245,7 @@ button {
     background-color: #b80000;
 }
 
-/* Footer */
+
 footer {
     background-color: #fff;
     padding: 20px;
@@ -256,7 +256,7 @@ footer {
 }
 
 
-/* Social Icons */
+
 .social-icons {
     display: flex;
     gap: 15px;
@@ -299,7 +299,7 @@ footer {
 }
 
 
-/* Pagination Container */
+
 #pagination {
     display: flex;
     justify-content: center;
@@ -335,7 +335,7 @@ footer {
 
 
 
-/* Responsive Styles */
+
 @media (max-width: 1024px) {
     nav {
         flex-direction: column;
