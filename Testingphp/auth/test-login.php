@@ -1,6 +1,5 @@
 <?php
 
-
 require_once '../config/config.php';
 require_once '../config/database.php';
 
@@ -129,7 +128,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login'])) {
                         <p class="text-subtext-light dark:text-subtext-dark">Enter any username to test the system</p>
                     </div>
                     
-                    
                     <?php if ($error): ?>
                         <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
                             <?= htmlspecialchars($error) ?>
@@ -141,7 +139,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login'])) {
                             <?= htmlspecialchars($message) ?>
                         </div>
                     <?php endif; ?>
-                    
                     
                     <form method="POST" class="space-y-4">
                         <div>

@@ -8,11 +8,9 @@
     <title>Applications | BrickMMO</title>
     <link rel="icon" type="image/x-icon" href="./assets/BrickMMO_Logo_Coloured.png" />
     
-    
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&icon_names=arrow_forward" />
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    
     
     <link rel="stylesheet" href="./css/style.css">
 
@@ -25,14 +23,12 @@
   <header>
     
     <nav id="desktop-nav">
-
       
       <div class="logo">
         <a href="index.php">
           <img src="./assets/BrickMMO_Logo_Coloured.png" alt="brickmmo logo" width="80px">
         </a>
       </div>
-
       
       <div>
         <ul class="nav-links">
@@ -45,7 +41,6 @@
     <section id="hero">
       <h1>BrickMMO Applications</h1>
       <p>A place for all BrickMMO Applications</p>
-
       
       <div class="search-container">
         <div class="search-box">
@@ -70,7 +65,6 @@
     </section>
 
   </header>
-
   
   <main>
 
@@ -88,9 +82,7 @@
     </section>
       
   </main>
-
   
-
   <footer>
     <div class="footer-container">
       <div class="social-icons">
@@ -107,7 +99,6 @@
     </div>
 
   </footer>
-
   
   <script>
   function toggleMenu() {
@@ -118,9 +109,9 @@
     icon.classList.toggle("active");
   }
 
-  const repoContainer = document.getElementById("repo-container"); 
+  const repoContainer = document.getElementById("repo-container");
   const paginationContainer = document.getElementById("pagination");
-  const githubUsername = "brickmmo"; 
+  const githubUsername = "brickmmo";
   const perPage = 9; 
   let currentPage = 1;
   let allRepos = [];
@@ -143,7 +134,7 @@
       allRepos = allRepos.concat(repos);
 
       if (repos.length === 100) {
-        await fetchRepos(page + 1); 
+        await fetchRepos(page + 1);
       } else {
         filteredRepos = [...allRepos];
         renderRepos();
@@ -224,7 +215,7 @@
   }
 
   async function renderRepos() {
-    repoContainer.innerHTML = ""; 
+    repoContainer.innerHTML = "";
     const start = (currentPage - 1) * perPage;
     const end = start + perPage;
     const reposToShow = filteredRepos.slice(start, end);
@@ -281,7 +272,7 @@
   }
 
   function renderPagination() {
-    paginationContainer.innerHTML = ""; 
+    paginationContainer.innerHTML = "";
     const totalPages = Math.ceil(filteredRepos.length / perPage);
 
     if (totalPages > 1) {
@@ -318,7 +309,6 @@
   </script>
 
   <script src="https://cdn.brickmmo.com/bar@1.0.0/bar.js"></script>
-
     
 </body>
 </html>

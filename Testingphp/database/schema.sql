@@ -1,10 +1,6 @@
--- BrickMMO Timesheets Management System Database Schema
--- Created: September 2025
-
 CREATE DATABASE IF NOT EXISTS brickmmo_timesheets;
 USE brickmmo_timesheets;
 
--- Users table for GitHub OAuth authentication
 CREATE TABLE users (
     id INT AUTO_INCREMENT PRIMARY KEY,
     github_id INT UNIQUE NOT NULL,
@@ -18,7 +14,6 @@ CREATE TABLE users (
     is_admin BOOLEAN DEFAULT FALSE
 );
 
--- Applications (repositories) table
 CREATE TABLE applications (
     id INT AUTO_INCREMENT PRIMARY KEY,
     github_id INT UNIQUE NOT NULL,
@@ -35,7 +30,6 @@ CREATE TABLE applications (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
--- Hours table for time tracking entries
 CREATE TABLE hours (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
@@ -51,7 +45,6 @@ CREATE TABLE hours (
     INDEX idx_application_date (application_id, work_date)
 );
 
--- Sessions table for user authentication
 CREATE TABLE sessions (
     id VARCHAR(128) PRIMARY KEY,
     user_id INT NOT NULL,
@@ -63,9 +56,5 @@ CREATE TABLE sessions (
     INDEX idx_expires_at (expires_at)
 );
 
--- Insert default admin user (replace with actual GitHub ID)
--- NOTE: You may need to update the github_id below with your actual GitHub ID
 INSERT INTO users (github_id, login, name, is_admin) VALUES (12345, 'admin', 'Admin User', TRUE);
 
--- No sample repositories inserted
--- All repositories should be imported dynamically from GitHub API using the "Import from GitHub" button in admin dashboard

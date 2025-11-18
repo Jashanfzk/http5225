@@ -1,10 +1,17 @@
 <?php
 class Database {
-    private $host = 'localhost';
-    private $db_name = 'brickmmo_timesheets';
-    private $username = 'root';
-    private $password = '';
+    private $host;
+    private $db_name;
+    private $username;
+    private $password;
     private $conn;
+
+    public function __construct() {
+        $this->host = defined('DB_HOST') ? DB_HOST : 'localhost';
+        $this->db_name = defined('DB_NAME') ? DB_NAME : 'brickmmo_timesheets';
+        $this->username = defined('DB_USER') ? DB_USER : 'root';
+        $this->password = defined('DB_PASS') ? DB_PASS : '';
+    }
 
     public function getConnection() {
         $this->conn = null;
@@ -22,7 +29,11 @@ class Database {
             );
         } catch(PDOException $exception) {
             error_log("Connection error: " . $exception->getMessage());
-            die("Database connection failed");
+            if (defined('DEVELOPMENT') && DEVELOPMENT) {
+                die("Database connection failed: " . $exception->getMessage());
+            } else {
+                die("Database connection failed. Please check your .env file configuration.");
+            }
         }
         
         return $this->conn;

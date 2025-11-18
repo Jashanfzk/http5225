@@ -1,10 +1,26 @@
 <?php
 
-
 require_once 'config/config.php';
 require_once 'config/database.php';
 
 requireLogin();
+
+$isAuthorizedAdmin = false;
+if (isset($_SESSION['user_id']) && !empty($_SESSION['user_id'])) {
+    try {
+        $db = (new Database())->getConnection();
+        $stmt = $db->prepare('SELECT name, login FROM users WHERE id = ?');
+        $stmt->execute([$_SESSION['user_id']]);
+        $adminUser = $stmt->fetch();
+        if ($adminUser && isset($adminUser['name']) && isset($adminUser['login']) && 
+            ($adminUser['name'] === 'Jashanpreet Singh Gill' || 
+             $adminUser['name'] === 'Adam Thomas' || 
+             $adminUser['login'] === 'codeadamca')) {
+            $isAuthorizedAdmin = true;
+        }
+    } catch (Exception $e) {
+    }
+}
 
 $error_message = '';
 $success_message = '';
@@ -444,7 +460,6 @@ try {
             <p style="font-size: 1.1rem; color: #666;">View your logged hours and contributions.</p>
         </div>
         
-        
         <?php if (!empty($error_message)): ?>
             <div class="alert alert-error">
                 <strong>Error:</strong> <?= htmlspecialchars($error_message) ?>
@@ -452,13 +467,11 @@ try {
             </div>
         <?php endif; ?>
         
-        
         <?php if (!empty($success_message)): ?>
             <div class="alert alert-success">
                 <?= htmlspecialchars($success_message) ?>
             </div>
         <?php endif; ?>
-        
         
         <div class="card">
             <h2 style="font-size: 1.5rem; font-weight: 700; margin-bottom: 1rem;">Summary Statistics</h2>
@@ -487,7 +500,6 @@ try {
                 </div>
             </div>
         </div>
-        
         
         <div class="card">
             <h2 style="font-size: 1.5rem; font-weight: 700; margin-bottom: 1rem;">Filters</h2>
@@ -519,7 +531,6 @@ try {
                 </div>
             </form>
         </div>
-        
         
         <div class="card">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
@@ -570,7 +581,6 @@ try {
                         </div>
                     <?php endforeach; ?>
                 </div>
-                
                 
                 <?php if ($total_pages > 1): ?>
                     <div class="pagination">

@@ -1,4 +1,6 @@
 <?php
+require_once '../config/config.php';
+
 if (isset($_GET['repo'])) {
     $repoName = $_GET['repo'];
     $owner = "BrickMMO"; 
@@ -6,6 +8,10 @@ if (isset($_GET['repo'])) {
     $headers = [
         "User-Agent: BrickMMO-WebApp"
     ];
+    
+    if (!empty(GITHUB_TOKEN)) {
+        $headers[] = "Authorization: token " . GITHUB_TOKEN;
+    }
 
     function fetchGitHubData($url, $headers) {
         $ch = curl_init();
@@ -19,8 +25,26 @@ if (isset($_GET['repo'])) {
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
         
+        if ($httpCode === 403) {
+            $responseData = json_decode($response, true);
+            if (isset($responseData['message']) && strpos($responseData['message'], 'rate limit') !== false) {
+                $errorMsg = "GitHub API rate limit exceeded. ";
+                if (empty(GITHUB_TOKEN)) {
+                    $errorMsg .= "GITHUB_TOKEN is missing in .env file. Add your GitHub Personal Access Token to .env file: GITHUB_TOKEN=your_token_here";
+                } else {
+                    $errorMsg .= "Please add a valid GITHUB_TOKEN to your .env file to increase rate limits.";
+                }
+                error_log($errorMsg);
+                return null;
+            }
+        }
+        
         if ($response === false || $httpCode >= 400) {
-            error_log("GitHub API Error: HTTP $httpCode for URL: $url");
+            $errorMsg = "GitHub API Error: HTTP $httpCode for URL: $url";
+            if (empty(GITHUB_TOKEN) && $httpCode === 403) {
+                $errorMsg .= ". GITHUB_TOKEN is missing in .env file. Add your token: GITHUB_TOKEN=your_token_here";
+            }
+            error_log($errorMsg);
             return null;
         }
         
@@ -47,7 +71,14 @@ if (isset($_GET['repo'])) {
     $repoData = fetchGitHubData($repoUrl, $headers);
     
     if (!$repoData || !is_array($repoData)) {
-        die("<h1>Error</h1><p>Could not fetch repository data. Please check if the repository exists or try again later.</p><p>GitHub API might be rate limited. <a href='../index.php'>Go back</a></p>");
+        $errorMsg = "<h1>Error</h1><p>Could not fetch repository data. Please check if the repository exists or try again later.</p>";
+        if (empty(GITHUB_TOKEN)) {
+            $errorMsg .= "<p><strong>GITHUB_TOKEN is missing in .env file.</strong> GitHub API may be rate limited. Add your GitHub Personal Access Token to .env file: <code>GITHUB_TOKEN=your_token_here</code></p>";
+            $errorMsg .= "<p>Get token from: <a href='https://github.com/settings/tokens' target='_blank'>https://github.com/settings/tokens</a></p>";
+        } else {
+            $errorMsg .= "<p>GitHub API might be rate limited. <a href='../index.php'>Go back</a></p>";
+        }
+        die($errorMsg . "<p><a href='../index.php'>Go back</a></p>");
     }
     
     $commitsData = fetchGitHubData($commitsUrl, $headers);

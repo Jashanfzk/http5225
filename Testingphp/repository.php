@@ -1,8 +1,24 @@
 <?php
 
-
 require_once 'config/config.php';
 require_once 'config/database.php';
+
+$isAuthorizedAdmin = false;
+if (isset($_SESSION['user_id']) && !empty($_SESSION['user_id'])) {
+    try {
+        $db = (new Database())->getConnection();
+        $stmt = $db->prepare('SELECT name, login FROM users WHERE id = ?');
+        $stmt->execute([$_SESSION['user_id']]);
+        $adminUser = $stmt->fetch();
+        if ($adminUser && isset($adminUser['name']) && isset($adminUser['login']) && 
+            ($adminUser['name'] === 'Jashanpreet Singh Gill' || 
+             $adminUser['name'] === 'Adam Thomas' || 
+             $adminUser['login'] === 'codeadamca')) {
+            $isAuthorizedAdmin = true;
+        }
+    } catch (Exception $e) {
+    }
+}
 
 if (!isset($_GET['repo'])) {
     redirect(BASE_URL . 'index.php?error=repository_not_found');
@@ -716,6 +732,9 @@ try {
             <nav class="nav-links">
                 <a href="<?= BASE_URL ?>" class="nav-link">Home</a>
                 <a href="https://brickmmo.com" class="nav-link">BrickMMO Main Site</a>
+                <?php if ($isAuthorizedAdmin): ?>
+                    <a href="<?= BASE_URL ?>admin/" class="nav-link">Admin</a>
+                <?php endif; ?>
                 <?php if (isset($_SESSION['user_id'])): ?>
                     <a href="<?= BASE_URL ?>dashboard.php" class="nav-link">Dashboard</a>
                     <a href="<?= BASE_URL ?>auth/logout.php" class="nav-link">Logout</a>
@@ -757,9 +776,6 @@ try {
                 <div class="stat-value"><?= (int)($stats['time_entries'] ?? 0) ?></div>
             </div>
         </div>
-        
-        
-        
         
         <div class="contributors-section">
             <div class="section-header">

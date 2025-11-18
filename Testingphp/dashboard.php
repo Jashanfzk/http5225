@@ -4,6 +4,23 @@ require_once 'config/database.php';
 
 requireLogin();
 
+$isAuthorizedAdmin = false;
+if (isset($_SESSION['user_id']) && !empty($_SESSION['user_id'])) {
+    try {
+        $db = (new Database())->getConnection();
+        $stmt = $db->prepare('SELECT name, login FROM users WHERE id = ?');
+        $stmt->execute([$_SESSION['user_id']]);
+        $adminUser = $stmt->fetch();
+        if ($adminUser && isset($adminUser['name']) && isset($adminUser['login']) && 
+            ($adminUser['name'] === 'Jashanpreet Singh Gill' || 
+             $adminUser['name'] === 'Adam Thomas' || 
+             $adminUser['login'] === 'codeadamca')) {
+            $isAuthorizedAdmin = true;
+        }
+    } catch (Exception $e) {
+    }
+}
+
 try {
     $database = new Database();
     $db = $database->getConnection();
@@ -512,7 +529,6 @@ try {
             </div>
         </div>
         
-        
         <?php if ($message): ?>
             <div class="alert alert-success">
                 <?= htmlspecialchars($message) ?>
@@ -524,7 +540,6 @@ try {
                 <?= htmlspecialchars($error) ?>
             </div>
         <?php endif; ?>
-        
         
         <div class="dashboard-content">
             
@@ -580,7 +595,6 @@ try {
 
         </div>
     </div>
-
     
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script>

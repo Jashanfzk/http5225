@@ -21,10 +21,13 @@ $isAuthorizedAdmin = false;
 if ($isLoggedIn) {
     try {
         $db = (new Database())->getConnection();
-        $stmt = $db->prepare('SELECT name FROM users WHERE id = ?');
+        $stmt = $db->prepare('SELECT name, login FROM users WHERE id = ?');
         $stmt->execute([$_SESSION['user_id']]);
         $user = $stmt->fetch();
-        if ($user && isset($user['name']) && $user['name'] === 'Jashanpreet Singh Gill') {
+        if ($user && isset($user['name']) && isset($user['login']) && 
+            ($user['name'] === 'Jashanpreet Singh Gill' || 
+             $user['name'] === 'Adam Thomas' || 
+             $user['login'] === 'codeadamca')) {
             $isAuthorizedAdmin = true;
         }
     } catch (Exception $e) {
@@ -129,7 +132,6 @@ $baseQuery = [
     <title>Applications | BrickMMO</title>
     <link rel="icon" type="image/x-icon" href="./assets/BrickMMO_Logo_Coloured.png" />
     
-    
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&icon_names=arrow_forward" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
@@ -148,14 +150,15 @@ $baseQuery = [
                     <img src="./assets/BrickMMO_Logo_Coloured.png" alt="brickmmo logo" width="80px">
                 </a>
             </div>
-
             
             <div>
                 <ul class="nav-links">
                     <li><a href="https://brickmmo.com/">BrickMMo Main Site</a></li>
-                    <li><a href="admin/">Admin</a></li>
+                    <?php if ($isAuthorizedAdmin): ?>
+                        <li><a href="admin/">Admin</a></li>
+                    <?php endif; ?>
                     <?php if ($isLoggedIn): ?>
-                        <li><a href="dashboard.php">USER</a></li>
+                        <li><a href="dashboard.php">User</a></li>
                         <li><a href="auth/logout.php">Logout</a></li>
                     <?php else: ?>
                         <li><a href="auth/login.php">Login</a></li>
@@ -167,7 +170,6 @@ $baseQuery = [
         <section id="hero">
             <h1>BrickMMO Applications</h1>
             <p>A place for all BrickMMO Applications</p>
-
             
             <div class="search-container">
                 <form method="GET" action="index.php" id="search-form">
@@ -194,7 +196,6 @@ $baseQuery = [
         </section>
     </header>
     
-    
     <main>
         <section id="applications">
             
@@ -203,7 +204,6 @@ $baseQuery = [
                     <p id="search-results-text" style="margin: 0; font-size: 16px;"><i class="fas fa-search" style="margin-right: 8px; color: #3498db;"></i> Found <strong><?php echo $totalRepos; ?></strong> repositories matching "<strong><?php echo htmlspecialchars($searchTerm); ?></strong>"</p>
                 <?php endif; ?>
             </div>
-            
             
             <div style="margin-bottom: 20px; padding: 12px 15px; background-color: #f8f9fa; border-left: 4px solid #DD5A3A; border-radius: 4px;">
                 <p style="margin: 0; font-size: 15px; color: #333;">
@@ -275,7 +275,6 @@ $baseQuery = [
                 <?php endif; ?>
             </div>
             
-            
             <div id="pagination">
                 <?php if ($totalPages > 1): ?>
                     <?php if ($currentPage > 1): ?>
@@ -291,7 +290,6 @@ $baseQuery = [
             </div>
         </section>
     </main>
-    
     
     <footer>
         <div class="footer-container">

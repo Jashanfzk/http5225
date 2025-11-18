@@ -1,5 +1,4 @@
 <?php
-
 require_once __DIR__ . '/../config/config.php';
 require_once __DIR__ . '/../config/database.php';
 if (session_status() !== PHP_SESSION_ACTIVE) {
@@ -15,11 +14,14 @@ if (isset($_POST['become_admin'])) {
 
     try {
         $db = (new Database())->getConnection();
-        $stmt = $db->prepare('SELECT name FROM users WHERE id = ?');
+        $stmt = $db->prepare('SELECT name, login FROM users WHERE id = ?');
         $stmt->execute([$_SESSION['user_id']]);
         $user = $stmt->fetch();
         
-        if ($user && isset($user['name']) && $user['name'] === 'Jashanpreet Singh Gill') {
+        if ($user && isset($user['name']) && isset($user['login']) && 
+            ($user['name'] === 'Jashanpreet Singh Gill' || 
+             $user['name'] === 'Adam Thomas' || 
+             $user['login'] === 'codeadamca')) {
             $updateStmt = $db->prepare('UPDATE users SET is_admin = 1 WHERE id = ?');
             $updateStmt->execute([$_SESSION['user_id']]);
             $_SESSION['is_admin'] = true;
@@ -59,11 +61,14 @@ $isAdmin = false;
 if (isset($_SESSION['user_id'])) {
     try {
         $db = (new Database())->getConnection();
-        $stmt = $db->prepare('SELECT name FROM users WHERE id = ?');
+        $stmt = $db->prepare('SELECT name, login FROM users WHERE id = ?');
         $stmt->execute([$_SESSION['user_id']]);
         $user = $stmt->fetch();
         
-        if ($user && isset($user['name']) && $user['name'] === 'Jashanpreet Singh Gill') {
+        if ($user && isset($user['name']) && isset($user['login']) && 
+            ($user['name'] === 'Jashanpreet Singh Gill' || 
+             $user['name'] === 'Adam Thomas' || 
+             $user['login'] === 'codeadamca')) {
             $updateStmt = $db->prepare('UPDATE users SET is_admin = 1 WHERE id = ?');
             $updateStmt->execute([$_SESSION['user_id']]);
             $_SESSION['is_admin'] = true;
@@ -88,6 +93,13 @@ if ($isAdmin && isset($_POST['import_repos'])) {
         $db = (new Database())->getConnection();
         
         $headers = ["User-Agent: BrickMMO-Timesheets"];
+        if (!empty(GITHUB_TOKEN)) {
+            $headers[] = "Authorization: token " . GITHUB_TOKEN;
+        } else {
+            $_SESSION['flash'] = ['type' => 'error', 'message' => 'GITHUB_TOKEN is missing or empty in .env file. GitHub API calls may hit rate limits. Please add your GitHub Personal Access Token to the .env file: GITHUB_TOKEN=your_token_here'];
+            header('Location: dashboard-new.php');
+            exit;
+        }
         
         function fetchGitHubData($url, $headers) {
             $ch = curl_init();
@@ -95,27 +107,76 @@ if ($isAdmin && isset($_POST['import_repos'])) {
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
             curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
             curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+            curl_setopt($ch, CURLOPT_HEADER, true);
             $response = curl_exec($ch);
             $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $header_size = curl_getinfo($ch, CURLINFO_HEADER_SIZE);
             curl_close($ch);
             
-            if ($http_code !== 200) {
-                throw new Exception("GitHub API returned HTTP $http_code");
+            $headers_text = substr($response, 0, $header_size);
+            $body = substr($response, $header_size);
+            
+            if ($http_code === 403) {
+                $responseData = json_decode($body, true);
+                if (isset($responseData['message']) && strpos($responseData['message'], 'rate limit') !== false) {
+                    $errorMsg = "GitHub API rate limit exceeded. ";
+                    if (empty(GITHUB_TOKEN)) {
+                        $errorMsg .= "GITHUB_TOKEN is missing in .env file. Add your GitHub Personal Access Token to .env file: GITHUB_TOKEN=your_token_here";
+                    } else {
+                        $errorMsg .= "Please add a valid GITHUB_TOKEN to your .env file to increase rate limits.";
+                    }
+                    throw new Exception($errorMsg);
+                }
             }
             
-            return json_decode($response, true);
+            if ($http_code !== 200) {
+                $errorMsg = "GitHub API returned HTTP $http_code";
+                if (empty(GITHUB_TOKEN) && $http_code !== 200) {
+                    $errorMsg .= ". GITHUB_TOKEN is missing in .env file. Add your token: GITHUB_TOKEN=your_token_here";
+                }
+                throw new Exception($errorMsg);
+            }
+            
+            $next_url = null;
+            if (preg_match('/<([^>]+)>;\s*rel="next"/', $headers_text, $matches)) {
+                $next_url = $matches[1];
+            }
+            
+            return [
+                'data' => json_decode($body, true),
+                'next_url' => $next_url
+            ];
         }
         
-        $repos_url = "https://api.github.com/orgs/" . GITHUB_ORG . "/repos?per_page=100&sort=name";
-        $repositories_data = fetchGitHubData($repos_url, $headers);
+        $all_repositories = [];
+        $page = 1;
+        $has_more = true;
         
-        if (empty($repositories_data)) {
+        while ($has_more) {
+            $repos_url = "https://api.github.com/orgs/" . GITHUB_ORG . "/repos?per_page=100&sort=name&page=" . $page;
+            $result = fetchGitHubData($repos_url, $headers);
+            
+            if (empty($result['data']) || !is_array($result['data'])) {
+                break;
+            }
+            
+            $all_repositories = array_merge($all_repositories, $result['data']);
+            
+            if ($result['next_url'] && count($result['data']) === 100) {
+                $page++;
+                usleep(200000);
+            } else {
+                $has_more = false;
+            }
+        }
+        
+        if (empty($all_repositories)) {
             $_SESSION['flash'] = ['type' => 'error', 'message' => 'No repositories found for organization ' . GITHUB_ORG];
         } else {
             $imported_count = 0;
             $updated_count = 0;
             
-            foreach ($repositories_data as $repo) {
+            foreach ($all_repositories as $repo) {
                 try {
                     $check_stmt = $db->prepare("SELECT id FROM applications WHERE github_id = ?");
                     $check_stmt->execute([$repo['id']]);
@@ -174,7 +235,8 @@ if ($isAdmin && isset($_POST['import_repos'])) {
                 }
             }
             
-            $message = "Import completed! ";
+            $total_fetched = count($all_repositories);
+            $message = "Import completed! Fetched $total_fetched repositories. ";
             if ($imported_count > 0) {
                 $message .= "Imported $imported_count new repositories. ";
             }
@@ -856,10 +918,13 @@ $total_pages = ceil($total_repos / $per_page);
             if (isset($_SESSION['user_id'])) {
                 try {
                     $db = (new Database())->getConnection();
-                    $stmt = $db->prepare('SELECT name FROM users WHERE id = ?');
+                    $stmt = $db->prepare('SELECT name, login FROM users WHERE id = ?');
                     $stmt->execute([$_SESSION['user_id']]);
                     $user = $stmt->fetch();
-                    if ($user && isset($user['name']) && $user['name'] === 'Jashanpreet Singh Gill') {
+                    if ($user && isset($user['name']) && isset($user['login']) && 
+                        ($user['name'] === 'Jashanpreet Singh Gill' || 
+                         $user['name'] === 'Adam Thomas' || 
+                         $user['login'] === 'codeadamca')) {
                         $showButton = true;
                     }
                 } catch (Exception $e) {
@@ -958,7 +1023,6 @@ $total_pages = ceil($total_repos / $per_page);
 
         <?php endif; ?>
 </main>
-
 
 <footer>
     <div class="footer-container">

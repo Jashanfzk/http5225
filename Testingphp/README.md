@@ -2,47 +2,30 @@
 
 ## Capstone Project Documentation
 
-**Author:** [Jashanpreet Singh Gill]  
-**Institution:** [Humber college]  
-**Course:** [Capstone]  
-**Date:** [13-NOV-2025]  
-
+**Author:** Jashanpreet Singh Gill  
+**Institution:** Humber College  
+**Course:** Capstone  
+**Date:** November 13, 2025
 
 ---
 
 ## Table of Contents
 
-1. [Executive Summary](#executive-summary)
-2. [Introduction](#introduction)
-3. [Problem Statement](#problem-statement)
-4. [Project Objectives](#project-objectives)
-5. [System Architecture](#system-architecture)
-6. [Technology Stack](#technology-stack)
-7. [System Features](#system-features)
-8. [Database Design](#database-design)
-9. [Implementation Details](#implementation-details)
-10. [Security Features](#security-features)
-11. [User Interface Design](#user-interface-design)
-12. [Testing and Validation](#testing-and-validation)
-13. [Deployment Guide](#deployment-guide)
-14. [Future Enhancements](#future-enhancements)
-15. [Conclusion](#conclusion)
-16. [References](#references)
-17. [Appendices](#appendices)
-
----
-
-## Executive Summary
-
-The BrickMMO Timesheets Management System is a comprehensive web-based application designed to streamline time tracking and contribution management for the BrickMMO open-source project ecosystem. This system addresses the critical need for accurate time logging, contributor analytics, and project management across multiple GitHub repositories.
-
-The application leverages modern web technologies including PHP 8.x, MySQL, and GitHub OAuth 2.0 authentication to provide a secure, scalable, and user-friendly platform. Key achievements include implementing robust security measures, creating an intuitive user interface, and developing comprehensive administrative tools for project oversight.
-
-**Key Metrics:**
-- **Development Time:** [2 months]
-- **Database Tables:** 3 primary tables with optimized relationships
-- **API Integrations:** GitHub REST API v3
-- **Security Features:** CSRF protection, SQL injection prevention, OAuth 2.0
+1. [Introduction](#introduction)
+2. [Problem Statement](#problem-statement)
+3. [Project Objectives](#project-objectives)
+4. [System Architecture](#system-architecture)
+5. [Technology Stack](#technology-stack)
+6. [System Features](#system-features)
+7. [Database Design](#database-design)
+8. [Implementation Details](#implementation-details)
+9. [Security Features](#security-features)
+10. [User Interface Design](#user-interface-design)
+11. [Testing](#testing)
+12. [Deployment Guide](#deployment-guide)
+13. [Future Improvements](#future-improvements)
+14. [What I Learned](#what-i-learned)
+15. [References](#references)
 
 ---
 
@@ -50,319 +33,233 @@ The application leverages modern web technologies including PHP 8.x, MySQL, and 
 
 ### Background
 
-The BrickMMO project is a collaborative open-source initiative involving multiple repositories and contributors. As the project grew, the need for a centralized time tracking system became evident. Contributors required a way to log their work hours, track contributions across different repositories, and generate reports for project management purposes.
+So I've been working with the BrickMMO project for a while now, and there's a real problem - we have multiple repos and contributors, but no good way to track who's working on what and for how long. People were using spreadsheets, sticky notes, or just trying to remember what they worked on. It's messy and we lose track of things.
 
-### Purpose
+I thought there has to be a better way, so for my capstone project, I decided to build a timesheet system that integrates with GitHub. Since we're already using GitHub for everything, why not use it for authentication too?
 
-This capstone project aims to develop a comprehensive timesheets management system that:
-- Facilitates accurate time tracking for contributors
-- Provides real-time analytics and reporting
-- Integrates seamlessly with GitHub's authentication and repository systems
-- Offers administrative tools for project oversight
-- Maintains high security standards for user data
+### What I Built
 
-### Scope
+This is a web application that lets contributors log their hours, tracks what repos they worked on, and gives admins a way to see what everyone's been doing. Users can log in with their GitHub account (no separate passwords needed), log hours for different repos, and see their own history. Admins can import repos from GitHub and manage the system.
 
-The system encompasses:
-- User authentication via GitHub OAuth
-- Time entry logging and management
-- Repository management and synchronization
-- Personal and administrative dashboards
-- Public repository showcase
-- Analytics and reporting features
+### Development Time
+
+This took me about 2 months to build, working on it part-time around classes and other commitments. I had to learn a lot about OAuth, GitHub's API, and web security along the way.
 
 ---
 
 ## Problem Statement
 
-### Current Challenges
+### The Issues We Had
 
-1. **Fragmented Time Tracking:** Contributors previously tracked time using various methods (spreadsheets, notes, etc.), leading to inconsistencies and data loss.
+1. **Everyone was tracking time differently** - Some people used Google Sheets, others used notes apps, some didn't track at all. Data was getting lost.
 
-2. **Lack of Centralized Management:** No unified system existed to view all contributions across multiple BrickMMO repositories.
+2. **No centralized view** - If I wanted to see what everyone worked on across all our repos, I'd have to ask around or dig through different spreadsheets.
 
-3. **Manual Reporting:** Generating contribution reports required manual compilation, consuming significant time and prone to errors.
+3. **Manual work** - Making reports meant manually collecting data from everyone, which took forever and had errors.
 
-4. **Limited Visibility:** Project administrators lacked visibility into contributor activity and project progress.
+4. **Hard to see progress** - As a project lead, there was no easy way to see who was contributing what and when.
 
-5. **Authentication Complexity:** Managing separate user accounts created additional overhead for contributors.
+5. **Too many accounts** - We didn't want to make people create yet another account when they already have GitHub.
 
-### Solution Approach
+### My Solution
 
-The BrickMMO Timesheets Management System addresses these challenges by:
-- Providing a single, centralized platform for all time tracking
-- Automating data collection and reporting
-- Integrating with existing GitHub infrastructure
-- Offering real-time analytics and insights
-- Implementing secure, industry-standard authentication
+I built a single web app where:
+- Users log in with GitHub (no new accounts!)
+- Everyone logs hours in the same place
+- The system pulls repo info from GitHub automatically
+- Admins can see reports and manage repos
+- It's all in one place and everyone uses the same system
 
 ---
 
 ## Project Objectives
 
-### Primary Objectives
+### Main Goals
 
-1. **Develop a Secure Authentication System**
-   - Implement GitHub OAuth 2.0 integration
-   - Ensure secure session management
-   - Protect against common web vulnerabilities
+1. **GitHub OAuth Login**
+   - Let users sign in with their GitHub account
+   - Automatically create/update their profile
+   - Keep sessions secure
 
-2. **Create an Intuitive User Interface**
-   - Design responsive layouts for all devices
-   - Implement user-friendly navigation
-   - Provide clear visual feedback for user actions
+2. **Time Logging**
+   - Easy form to log hours worked
+   - Select which repo you worked on
+   - Pick a date and enter hours
+   - Optional description of what you did
 
-3. **Build Robust Time Tracking Functionality**
-   - Enable accurate hour logging with validation
-   - Support multiple repositories
-   - Implement date-based filtering and search
+3. **User Dashboard**
+   - See your total hours logged
+   - View recent entries
+   - Basic stats (how many repos you've worked on, etc.)
 
-4. **Develop Administrative Tools**
-   - Create repository management interface
-   - Provide system analytics and reporting
-   - Enable user and content management
+4. **Admin Panel**
+   - Import repos from GitHub org
+   - Enable/disable which repos show up
+   - See system-wide stats
 
-5. **Ensure Data Integrity and Security**
-   - Implement CSRF protection
-   - Prevent SQL injection attacks
-   - Validate and sanitize all user inputs
+5. **Security**
+   - Protect against SQL injection (used prepared statements everywhere)
+   - CSRF protection on forms
+   - Input validation and sanitization
 
-### Secondary Objectives
+### Secondary Goals
 
-- Optimize database queries for performance
-- Implement caching strategies
-- Create comprehensive error handling
-- Develop extensible architecture for future enhancements
+- Make it responsive (works on mobile)
+- Good error handling
+- Easy to add features later
 
 ---
 
 ## System Architecture
 
-### High-Level Architecture
+Here's how it all works together:
 
 ```
-Client Browser
-(HTML, CSS, JavaScript, Flatpickr Calendar)
+User's Browser (HTML/CSS/JavaScript)
          |
-         | HTTPS
+         | HTTPS requests
          |
-Web Server (Apache/Nginx)
-PHP 8.x Application Layer
+Web Server (Apache with PHP)
          |
-    -----------
-    |    |    |
-GitHub   MySQL   Session
-OAuth    Database Storage
+    ----|----|----
+    |        |    |
+GitHub    MySQL  Session
+OAuth     DB    Storage
 API
-REST API
 ```
 
-### Component Architecture
+### The Layers
 
-1. **Presentation Layer**
-   - User-facing web pages
-   - Responsive CSS styling
-   - JavaScript for interactivity
-   - Calendar components (Flatpickr)
+1. **Frontend (what users see)**
+   - HTML pages
+   - CSS for styling
+   - JavaScript for some interactivity
+   - Flatpickr for the date picker (found this library, it's great)
 
-2. **Application Layer**
-   - PHP business logic
-   - Authentication handlers
-   - Data validation
-   - API integration
+2. **Backend (PHP)**
+   - Handles authentication
+   - Processes form submissions
+   - Talks to the database
+   - Makes API calls to GitHub
 
-3. **Data Layer**
-   - MySQL database
-   - PDO database abstraction
-   - Query optimization
-   - Data relationships
+3. **Database (MySQL)**
+   - Stores user info
+   - Stores repo info
+   - Stores time entries
 
-4. **External Services**
-   - GitHub OAuth 2.0
-   - GitHub REST API
-   - Session management
+4. **GitHub API**
+   - For OAuth authentication
+   - For fetching repo data
 
-### Design Patterns
-
-- **MVC-like Structure:** Separation of concerns between presentation, logic, and data
-- **Singleton Pattern:** Database connection management
-- **Factory Pattern:** Database object creation
-- **Repository Pattern:** Data access abstraction
+I tried to keep things separated - config in one place, database stuff separate from business logic. Not perfect MVC but it works.
 
 ---
 
 ## Technology Stack
 
-### Backend Technologies
+### What I Used
 
-| Technology | Version | Purpose |
-|------------|---------|---------|
-| PHP | 8.0+ | Server-side scripting and application logic |
-| MySQL | 8.0+ | Relational database management |
-| PDO | Built-in | Database abstraction layer |
-| cURL | Built-in | HTTP requests to GitHub API |
+**Backend:**
+- PHP 8.0+ (it's what I know best, and XAMPP made local dev easy)
+- MySQL 8.0 (database)
+- PDO (for database stuff - safer than mysqli)
+- cURL (for API calls to GitHub)
 
-### Frontend Technologies
+**Frontend:**
+- HTML5, CSS3, JavaScript
+- Flatpickr (for the date picker - really nice library)
+- Google Fonts (Inter font - looks clean)
 
-| Technology | Version | Purpose |
-|------------|---------|---------|
-| HTML5 | Latest | Markup and structure |
-| CSS3 | Latest | Styling and responsive design |
-| JavaScript (ES6+) | Latest | Client-side interactivity |
-| Flatpickr | Latest | Date picker component |
+**Services:**
+- GitHub OAuth 2.0 (for login)
+- GitHub REST API (for getting repo info)
 
-### Third-Party Services
+**Tools:**
+- XAMPP (for local development)
+- phpMyAdmin (for database stuff)
+- VS Code/Cursor (for coding)
 
-- **GitHub OAuth 2.0:** User authentication
-- **GitHub REST API v3:** Repository data retrieval
-- **Google Fonts (Inter):** Typography
-
-### Development Tools
-
-- XAMPP/WAMP: Local development environment
-- phpMyAdmin: Database management
-- Git: Version control
-- VS Code/Cursor: Code editor
+I kept it simple - no fancy frameworks or build tools. Just vanilla PHP, HTML, CSS, and some JavaScript.
 
 ---
 
 ## System Features
 
-### 1. Authentication System
+### 1. Authentication with GitHub
 
-#### GitHub OAuth Integration
-- Secure OAuth 2.0 flow implementation
-- State parameter for CSRF protection
-- Automatic user account creation/update
-- Session management with timeout
+When you click "Login", it:
+1. Generates a random state token (for security)
+2. Sends you to GitHub to authorize
+3. GitHub sends you back with a code
+4. The app exchanges the code for an access token
+5. Fetches your GitHub profile info
+6. Creates/updates your account in the database
+7. Logs you in
 
-**Technical Implementation:**
-```php
-// OAuth flow with state validation
-$state = bin2hex(random_bytes(16));
-$_SESSION['oauth_state'] = $state;
-$github_url = 'https://github.com/login/oauth/authorize?' . http_build_query([
-    'client_id' => GITHUB_CLIENT_ID,
-    'redirect_uri' => GITHUB_REDIRECT_URI,
-    'scope' => 'user:email',
-    'state' => $state
-]);
-```
+The tricky part was understanding OAuth flow - took me a while to get the state parameter right and handle all the edge cases. But it works now!
 
-#### Session Management
-- Secure session configuration
-- Automatic timeout (1 hour)
-- Session regeneration on login
-- Complete session destruction on logout
+### 2. Logging Hours
 
-### 2. Time Tracking Module
+You can:
+- Pick a repo from a dropdown (only shows active repos)
+- Select a date (calendar popup)
+- Enter hours (between 0.25 and 16 hours per day)
+- Add a description (optional)
 
-#### Core Functionality
-- **Date Selection:** Interactive calendar with date validation
-- **Repository Selection:** Dropdown of active repositories
-- **Duration Input:** Decimal hours (0.25 to 16.0 hours)
-- **Description Field:** Optional work description
-- **Validation:** Server-side and client-side validation
+The form validates everything on the server side. I had some client-side validation too but you can't trust that - always validate server-side.
 
-#### Features
-- Persistent date selection (remembers last logged date)
-- Calendar highlighting for logged dates
-- Real-time form validation
-- Success/error messaging
-- Duplicate entry prevention
+### 3. Dashboard
 
-### 3. Personal Dashboard
+Shows:
+- Your total hours logged
+- How many entries you've made
+- How many different repos you've worked on
+- Your most recent 10 entries
 
-#### User Statistics
-- Total hours logged
-- Total entries count
-- Projects worked on
-- First and last entry dates
-- Average hours per entry
+Pretty basic but useful. I wanted to add charts but ran out of time.
 
-#### Recent Activity
-- Last 10 time entries
-- Quick access to edit entries
-- Repository links
-- Date and duration display
+### 4. Personal History
 
-### 4. Personal History Page
+You can see all your entries, filter by repo, search, paginate through results. Basic CRUD stuff.
 
-#### Advanced Filtering
-- Filter by repository
-- Date range selection
-- Pagination support
-- Search functionality
+### 5. Admin Dashboard
 
-#### Analytics
-- Monthly breakdown charts
-- Contribution trends
-- Project distribution
-- Time allocation analysis
+Only accessible to admins (me and Adam for now). Admins can:
+- Import all repos from the GitHub org (one click)
+- Toggle which repos are active/visible
+- See system stats
 
-### 5. Repository Management (Admin)
+The import feature was fun to build - it fetches all repos from GitHub, checks if they exist in the DB, updates or inserts as needed.
 
-#### Repository Import
-- Bulk import from GitHub organization
-- Automatic repository synchronization
-- Language detection
-- Visibility management
+### 6. Public Repo Showcase
 
-#### Repository Control
-- Enable/disable repositories
-- Search and filter
-- Pagination
-- Status indicators
-
-### 6. Public Repository Showcase
-
-#### Features
-- Active repository listing
-- Search functionality
-- Filter by name, language, description
-- Contributor statistics
-- Total hours per repository
-- Responsive grid layout
-
-### 7. Administrative Dashboard
-
-#### System Analytics
-- Total contributors
-- Total hours logged
-- Active repositories
-- User activity metrics
-- Repository statistics
-
-#### Management Tools
-- User management
-- Repository management
-- System configuration
-- Data export capabilities
+On the homepage, anyone can browse active repos, search them, see contributor stats. No login required for this.
 
 ---
 
 ## Database Design
 
-### Entity Relationship Diagram
+I have 3 main tables:
 
-```
-users                    applications                hours
-------------------------------------------------------------
-id (PK)                  id (PK)                     id (PK)
-github_id                github_id                   user_id(FK)
-login                    name                        app_id (FK)
-name                     description                 work_date
-email                    language                    duration
-avatar_url               is_active                   description
-is_admin                 visibility                  created_at
-created_at               created_at                  updated_at
-updated_at               updated_at
-```
+### Users Table
+Stores GitHub user info - their GitHub ID, username, name, email, avatar URL, and whether they're an admin.
+
+### Applications Table
+Stores repository info - name, description, language, whether it's active, etc. This gets populated from the GitHub import.
+
+### Hours Table
+The actual time entries - links to a user and an application, has a date, duration, and optional description.
+
+I used foreign keys with cascade delete - if a user or repo gets deleted, their hours get deleted too. Seems safer that way.
+
+I added some indexes on commonly queried fields (user_id + date, application_id + date) to speed things up.
 
 ### Database Schema
 
-#### Users Table
+The complete schema is in `database/schema.sql`. Here's what the tables look like:
+
 ```sql
+-- Users table
 CREATE TABLE users (
     id INT AUTO_INCREMENT PRIMARY KEY,
     github_id INT UNIQUE NOT NULL,
@@ -371,17 +268,12 @@ CREATE TABLE users (
     email VARCHAR(255),
     avatar_url TEXT,
     html_url TEXT,
-    bio TEXT,
+    is_admin BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    is_admin BOOLEAN DEFAULT FALSE
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
-```
 
-**Purpose:** Stores GitHub user information and authentication data.
-
-#### Applications Table
-```sql
+-- Applications (repositories) table
 CREATE TABLE applications (
     id INT AUTO_INCREMENT PRIMARY KEY,
     github_id INT UNIQUE NOT NULL,
@@ -389,20 +281,13 @@ CREATE TABLE applications (
     full_name VARCHAR(255) NOT NULL,
     description TEXT,
     html_url TEXT,
-    clone_url TEXT,
     language VARCHAR(100),
-    languages JSON,
-    visibility VARCHAR(20) DEFAULT 'public',
     is_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
-```
 
-**Purpose:** Stores repository information imported from GitHub.
-
-#### Hours Table
-```sql
+-- Hours (time entries) table
 CREATE TABLE hours (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
@@ -419,122 +304,84 @@ CREATE TABLE hours (
 );
 ```
 
-**Purpose:** Stores time tracking entries with referential integrity.
-
-### Database Relationships
-
-1. **Users → Hours:** One-to-Many
-   - One user can have multiple time entries
-   - Cascade delete ensures data integrity
-
-2. **Applications → Hours:** One-to-Many
-   - One repository can have multiple time entries
-   - Cascade delete maintains referential integrity
-
-3. **Indexes:** Optimized for common queries
-   - User and date lookups
-   - Application and date lookups
-
-### Data Integrity Constraints
-
-- **Foreign Keys:** Ensure referential integrity
-- **CHECK Constraints:** Validate duration ranges
-- **UNIQUE Constraints:** Prevent duplicate GitHub IDs
-- **NOT NULL Constraints:** Enforce required fields
-- **CASCADE DELETE:** Maintain data consistency
-
 ---
 
 ## Implementation Details
 
-### 1. Authentication Flow
+### Authentication Flow
 
-#### Login Process
-1. User clicks "Login" button
-2. System generates random state token
-3. Redirects to GitHub OAuth authorization
-4. User authorizes application
-5. GitHub redirects with authorization code
-6. System exchanges code for access token
-7. Fetches user data from GitHub API
-8. Creates/updates user in database
-9. Establishes session
-10. Redirects to dashboard
+The OAuth flow was the hardest part. I had to:
+1. Generate a secure random state token
+2. Store it in the session
+3. Redirect to GitHub
+4. When GitHub redirects back, check the state matches
+5. Exchange the code for a token
+6. Use the token to get user info
+7. Save everything to the database
 
-#### Security Measures
-- State parameter validation
-- CSRF token generation
-- Secure session configuration
-- Token expiration handling
+Took me a few tries to get it right. The state parameter is crucial for preventing CSRF attacks - I learned that the hard way when testing.
 
-### 2. Time Entry Processing
+Here's the basic flow:
+```php
+// Generate state token
+$state = bin2hex(random_bytes(16));
+$_SESSION['oauth_state'] = $state;
 
-#### Validation Pipeline
-1. **CSRF Token Validation:** Verify request authenticity
-2. **Input Sanitization:** Clean all user inputs
-3. **Business Rule Validation:**
-   - Repository selection required
-   - Date must be valid and not in future
-   - Duration within allowed range (0.25-16.0 hours)
-   - Description optional but sanitized
-4. **Database Validation:** Verify repository exists and is active
-5. **Insert Operation:** Create time entry record
-6. **Session Update:** Store last logged date
-
-#### Error Handling
-- User-friendly error messages
-- Detailed error logging
-- Graceful failure handling
-- Transaction rollback on errors
-
-### 3. Repository Synchronization
-
-#### Import Process
-1. Fetch organization repositories from GitHub API
-2. Parse JSON response
-3. For each repository:
-   - Check if exists in database
-   - Update existing or insert new
-   - Set language and visibility
-   - Mark as active
-4. Return import statistics
-
-#### Rate Limiting
-- Respects GitHub API rate limits
-- Implements request throttling
-- Caches repository data locally
-- Handles API errors gracefully
-
-### 4. Query Optimization
-
-#### Indexed Queries
-```sql
--- Optimized user history query
-SELECT h.*, a.name as app_name, a.html_url as app_url
-FROM hours h
-JOIN applications a ON h.application_id = a.id
-WHERE h.user_id = ?
-ORDER BY h.work_date DESC, h.created_at DESC
-LIMIT 10;
+// Redirect to GitHub
+$github_url = 'https://github.com/login/oauth/authorize?' . http_build_query([
+    'client_id' => GITHUB_CLIENT_ID,
+    'redirect_uri' => GITHUB_REDIRECT_URI,
+    'scope' => 'user:email',
+    'state' => $state
+]);
+header("Location: $github_url");
 ```
 
-#### Pagination Implementation
-- Efficient LIMIT/OFFSET queries
-- Total count calculation
-- Page number validation
-- Boundary checking
+Then when GitHub sends the user back, I check the state matches and exchange the code for a token.
+
+### Time Entry Validation
+
+I validate:
+- CSRF token (must match session)
+- Repository ID (must exist and be active)
+- Date (must be valid, can't be in the future)
+- Duration (between 0.25 and 16 hours)
+- Description is optional but gets sanitized
+
+All validation happens server-side. Never trust the client.
+
+### Repo Import
+
+This was cool to build. It:
+1. Makes a request to GitHub API: `/orgs/BrickMMO/repos`
+2. Gets back a JSON array of all repos
+3. Loops through each one
+4. Checks if it exists in DB (by GitHub ID)
+5. Updates if exists, inserts if new
+6. Sets language, visibility, etc.
+
+I ran into rate limiting issues at first - GitHub only lets you make 60 requests per hour without a token. I added a GitHub Personal Access Token to the `.env` file to increase that.
+
+### Database Queries
+
+I used PDO prepared statements everywhere. No string concatenation in SQL - learned that lesson in security class. All user input goes through prepared statements.
+
+Example:
+```php
+$stmt = $db->prepare("SELECT * FROM users WHERE id = ?");
+$stmt->execute([$user_id]);
+$user = $stmt->fetch();
+```
+
+I used JOINs to get user names with entries, repo names with entries, etc. Had to look up the syntax a few times but got the hang of it.
 
 ---
 
 ## Security Features
 
-### 1. CSRF Protection
+### CSRF Protection
 
-**Implementation:**
-- Token generation on form load
-- Token validation on submission
-- Token stored in session
-- Secure comparison using `hash_equals()`
+Every form has a CSRF token. I generate a random token, store it in the session, and check it matches on submit. Prevents cross-site request forgery attacks.
 
 ```php
 function generateCSRFToken() {
@@ -545,27 +392,13 @@ function generateCSRFToken() {
 }
 ```
 
-### 2. SQL Injection Prevention
+### SQL Injection Prevention
 
-**Strategy:**
-- Exclusive use of prepared statements
-- Parameter binding for all queries
-- No direct string concatenation in queries
-- PDO with error mode exceptions
+Used PDO prepared statements everywhere. Never build SQL with string concatenation. All user input gets bound as parameters.
 
-```php
-$stmt = $db->prepare("SELECT * FROM users WHERE id = ?");
-$stmt->execute([$user_id]);
-```
+### Input Sanitization
 
-### 3. Input Validation and Sanitization
-
-**Approach:**
-- Server-side validation (primary)
-- Client-side validation (UX enhancement)
-- Input sanitization with `htmlspecialchars()`
-- Type casting for numeric inputs
-- Date validation
+I sanitize all user input with `htmlspecialchars()` before displaying. This prevents XSS attacks.
 
 ```php
 function sanitizeInput($input) {
@@ -573,498 +406,212 @@ function sanitizeInput($input) {
 }
 ```
 
-### 4. Session Security
+### Session Security
 
-**Measures:**
-- Secure session configuration
-- Session timeout (1 hour)
-- Session regeneration on login
-- Complete session destruction on logout
-- Cookie security flags
+Sessions timeout after 1 hour of inactivity. On login, I regenerate the session ID. On logout, I destroy the session completely.
 
-### 5. OAuth Security
+### Admin Access
 
-**Implementation:**
-- State parameter for CSRF protection
-- Secure token exchange
-- HTTPS requirement
-- Token validation
-- Error handling for failed authentication
-
-### 6. Access Control
-
-**Admin Protection:**
-- Role-based access control
-- Session-based authorization
-- Redirect on unauthorized access
-- Admin privilege verification
+Only specific users (checked by name/login) can access admin features. Not the most scalable solution but works for now. In production, I'd probably have a proper roles table.
 
 ---
 
 ## User Interface Design
 
-### Design Principles
+I tried to make it clean and simple. Used the BrickMMO orange color (#DD5A3A) as the primary color since that's the brand color.
 
-1. **User-Centered Design:** Intuitive navigation and clear feedback
-2. **Responsive Layout:** Mobile-first approach with breakpoints
-3. **Accessibility:** Semantic HTML and ARIA labels
-4. **Consistency:** Uniform styling and interaction patterns
-5. **Performance:** Optimized assets and lazy loading
+### Design Decisions
+
+- **Responsive:** Works on mobile, tablet, desktop. Used CSS media queries.
+- **Clean forms:** Simple inputs, clear labels, helpful error messages
+- **Navigation:** Simple menu bar, shows where you are
+- **Feedback:** Success/error messages when you submit forms
+
+I'm not a designer, so I kept it simple. Used Inter font from Google Fonts - looks modern and clean.
+
+The date picker (Flatpickr) is really nice - users can click a calendar icon and pick dates visually.
 
 ### Color Scheme
 
-- **Primary Color:** #DD5A3A (BrickMMO Orange)
-- **Background:** #FDF6F3 (Light Beige)
-- **Text:** #2C3E50 (Dark Gray)
-- **Accent:** #E8D5CF (Light Orange)
-- **Success:** #D4EDDA (Light Green)
-- **Error:** #F8D7DA (Light Red)
+- Primary: #DD5A3A (BrickMMO Orange)
+- Background: #FDF6F3 (Light Beige)
+- Text: #2C3E50 (Dark Gray)
+- Accent: #E8D5CF (Light Orange)
 
-### Typography
-
-- **Font Family:** Inter (Google Fonts)
-- **Headings:** 600-700 weight
-- **Body Text:** 400 weight
-- **Sizes:** Responsive scaling (0.85rem - 2rem)
-
-### Component Library
-
-1. **Cards:** Elevated containers with rounded corners
-2. **Forms:** Clean inputs with focus states
-3. **Buttons:** Primary and secondary styles
-4. **Tables:** Responsive with hover states
-5. **Alerts:** Success, error, and info messages
-6. **Navigation:** Horizontal menu with active states
-
-### Responsive Breakpoints
-
-- **Mobile:** < 640px
-- **Tablet:** 640px - 1200px
-- **Desktop:** > 1200px
+Nothing fancy, just clean and readable.
 
 ---
 
-## Testing and Validation
+## Testing
 
-### Testing Strategy
+### How I Tested
 
-#### 1. Functional Testing
-- **Authentication Flow:** Login, logout, session management
-- **Time Entry:** Create, validate, display entries
-- **Repository Management:** Import, toggle, search
-- **User Dashboard:** Statistics, history, filtering
+I tested manually - no automated tests (didn't have time to learn PHPUnit). I:
 
-#### 2. Security Testing
-- **CSRF Protection:** Verify token validation
-- **SQL Injection:** Test with malicious inputs
-- **XSS Prevention:** Test script injection attempts
-- **Session Security:** Verify timeout and destruction
-- **Access Control:** Test unauthorized access attempts
+1. **Tested authentication:** Login, logout, session timeout
+2. **Tested time logging:** Valid entries, invalid entries, edge cases
+3. **Tested admin features:** Import repos, toggle repos
+4. **Tested security:** Tried SQL injection attempts (they failed!), tested CSRF tokens
+5. **Tested on different devices:** Desktop, tablet, phone
 
-#### 3. Usability Testing
-- **Navigation:** Ease of use and clarity
-- **Forms:** Input validation and error messages
-- **Responsive Design:** Mobile and tablet testing
-- **Performance:** Page load times and responsiveness
+### What I Found
 
-#### 4. Integration Testing
-- **GitHub API:** OAuth flow and data retrieval
-- **Database:** CRUD operations and relationships
-- **Session Management:** Cross-page session persistence
+- Had some bugs with session handling at first (fixed now)
+- Date validation needed tweaking (rejecting valid dates initially)
+- Pagination had an off-by-one error (classic mistake)
+- Admin check wasn't working consistently (fixed by checking both name and login)
 
-### Test Cases
+Most bugs were small logic errors. Nothing major, but lots of little fixes.
 
-#### Authentication Test Cases
-1. Successful GitHub OAuth login
-2. Invalid state parameter rejection
-3. Session timeout after 1 hour
-4. Successful logout and session destruction
-5. Redirect to login when not authenticated
+### Performance
 
-#### Time Entry Test Cases
-1. Valid time entry creation
-2. Invalid date rejection (future dates)
-3. Duration validation (min/max)
-4. Required field validation
-5. CSRF token validation
-6. Duplicate entry prevention
+I didn't do formal performance testing, but:
+- Pages load pretty quickly (under 2 seconds usually)
+- Database queries are fast (under 100ms for most queries)
+- GitHub API calls take a bit longer (300-500ms)
 
-#### Repository Management Test Cases
-1. Successful repository import
-2. Repository toggle functionality
-3. Search and filter operations
-4. Pagination accuracy
-5. Error handling for API failures
-
-### Performance Metrics
-
-- **Page Load Time:** < 2 seconds
-- **Database Query Time:** < 100ms average
-- **API Response Time:** < 500ms
-- **Form Submission:** < 1 second
+Could probably optimize more, but it works fine for now.
 
 ---
 
 ## Deployment Guide
 
-### Prerequisites
+### For Local Development
 
-- PHP 8.0 or higher
-- MySQL 8.0 or higher
-- Apache/Nginx web server
-- SSL certificate (for production)
-- GitHub OAuth App credentials
+I used XAMPP:
+1. Install XAMPP
+2. Put project in `htdocs` folder
+3. Create database in phpMyAdmin
+4. Run `database/schema.sql` to create tables
+5. Copy `.env.example` to `.env` and fill in your values
+6. Start Apache and MySQL
+7. Go to `http://localhost/http5225/Testingphp/`
 
-### Step-by-Step Deployment
+### For Production (InfinityFree)
 
-#### 1. Server Setup
-```bash
-# Update system packages
-sudo apt update && sudo apt upgrade -y
+I'm deploying this to InfinityFree. Steps:
 
-# Install PHP and extensions
-sudo apt install php8.0 php8.0-mysql php8.0-curl php8.0-mbstring
+1. Upload all files via FTP
+2. Create database in InfinityFree control panel
+3. Update `.env` file with InfinityFree database credentials:
+   - DB_HOST (usually something like `sqlXXX.infinityfree.com`)
+   - DB_NAME (usually `username_dbname`)
+   - DB_USER (usually `username_dbuser`)
+   - DB_PASS (the password InfinityFree gives you)
+4. Set BASE_URL to your domain
+5. Set DEVELOPMENT=false
+6. Make sure `.env` file isn't publicly accessible
 
-# Install MySQL
-sudo apt install mysql-server
+The `.env` file approach makes it easy to switch between local and production without changing code. Much better than hardcoding values.
 
-# Install Apache
-sudo apt install apache2
-```
+### GitHub OAuth Setup
 
-#### 2. Database Configuration
-```sql
--- Create database
-CREATE DATABASE brickmmo_timesheets CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
--- Create user
-CREATE USER 'brickmmo_user'@'localhost' IDENTIFIED BY 'secure_password';
-GRANT ALL PRIVILEGES ON brickmmo_timesheets.* TO 'brickmmo_user'@'localhost';
-FLUSH PRIVILEGES;
-
--- Import schema
-mysql -u brickmmo_user -p brickmmo_timesheets < database/schema.sql
-```
-
-#### 3. Application Deployment
-```bash
-# Clone repository
-git clone <repository-url> /var/www/brickmmo-timesheets
-
-# Set permissions
-sudo chown -R www-data:www-data /var/www/brickmmo-timesheets
-sudo chmod -R 755 /var/www/brickmmo-timesheets
-
-# Configure Apache
-sudo nano /etc/apache2/sites-available/brickmmo-timesheets.conf
-```
-
-#### 4. Configuration
-```php
-// config/config.php
-define('DEVELOPMENT', false);
-define('BASE_URL', 'https://yourdomain.com/');
-define('DB_HOST', 'localhost');
-define('DB_NAME', 'brickmmo_timesheets');
-define('DB_USER', 'brickmmo_user');
-define('DB_PASS', 'secure_password');
-```
-
-#### 5. GitHub OAuth Setup
+You need to:
 1. Go to GitHub Settings → Developer settings → OAuth Apps
-2. Create new OAuth App
-3. Set Authorization callback URL: `https://yourdomain.com/auth/callback.php`
-4. Copy Client ID and Secret to config
+2. Create a new OAuth App
+3. Set the callback URL to your production URL + `/auth/callback.php`
+4. Copy the Client ID and Secret to your `.env` file
 
-#### 6. Security Hardening
-```bash
-# Disable directory listing
-sudo nano /etc/apache2/apache2.conf
-# Add: Options -Indexes
+For local dev, use `http://localhost/http5225/Testingphp/auth/callback.php`. For production, use your actual domain.
 
-# Enable HTTPS
-sudo certbot --apache -d yourdomain.com
+### GitHub Token Setup
 
-# Set secure file permissions
-sudo chmod 600 config/config.php
-```
+To avoid rate limiting on GitHub API calls:
+1. Go to GitHub Settings → Developer settings → Personal access tokens
+2. Generate a new token with `repo` and `read:org` scopes
+3. Add it to your `.env` file as `GITHUB_TOKEN=your_token_here`
 
-### Production Checklist
-
-- Set DEVELOPMENT = false
-- Configure proper database credentials
-- Set up SSL certificate
-- Update GitHub OAuth callback URL
-- Configure file permissions
-- Set up error logging
-- Enable database backups
-- Configure firewall rules
-- Set up monitoring
-- Test all functionality
+Without this, you'll hit rate limits pretty quickly when importing repos.
 
 ---
 
-## Future Enhancements
+## Future Improvements
 
-### Phase 2 Features
+If I had more time, I'd add:
 
-1. **Advanced Analytics**
-   - Graphical charts and visualizations
-   - Export to PDF/Excel
-   - Custom date range reports
-   - Project comparison tools
+1. **Better analytics:** Charts showing hours over time, breakdown by repo, etc. Maybe use Chart.js or similar.
 
-2. **Team Collaboration**
-   - Team dashboards
-   - Shared project views
-   - Comment system for entries
-   - Notification system
+2. **Export functionality:** Export your data to CSV or PDF. Would be useful for reports.
 
-3. **Mobile Application**
-   - Native iOS/Android apps
-   - Offline time tracking
-   - Push notifications
-   - Biometric authentication
+3. **Better admin features:** User management, bulk operations, better stats.
 
-4. **Integration Enhancements**
-   - Slack notifications
-   - Email reports
-   - Calendar integration
-   - Project management tool sync
+4. **Email notifications:** Maybe reminders to log hours, or weekly summaries.
 
-5. **Advanced Features**
-   - Time approval workflow
-   - Invoice generation
-   - Budget tracking
-   - Resource allocation
+5. **Mobile app:** Native app would be nice, but that's a whole other project.
 
-### Technical Improvements
+6. **Unit tests:** Learn PHPUnit and write proper tests. Would catch bugs earlier.
 
-1. **Performance Optimization**
-   - Implement Redis caching
-   - Database query optimization
-   - CDN integration
-   - Asset minification
+7. **Better error handling:** More graceful error messages, better error pages.
 
-2. **Code Quality**
-   - Implement unit testing framework
-   - Code coverage analysis
-   - Automated code review
-   - CI/CD pipeline
+8. **Caching:** Cache GitHub API responses to avoid rate limits. Maybe Redis.
 
-3. **Scalability**
-   - Load balancing
-   - Database replication
-   - Microservices architecture
-   - API versioning
+Some of this is in the "nice to have" category. The core functionality works for what we need right now.
 
 ---
 
-## Conclusion
+## What I Learned
 
-The BrickMMO Timesheets Management System successfully addresses the identified problem of fragmented time tracking and lack of centralized contribution management. Through careful design, implementation, and testing, the system provides a robust, secure, and user-friendly solution for the BrickMMO project ecosystem.
+This project taught me a lot:
 
-### Key Achievements
+1. **OAuth is complex** - But really powerful once you understand it. The state parameter is crucial.
 
-1. **Successful Integration:** Seamless GitHub OAuth and API integration
-2. **Security Implementation:** Comprehensive security measures protecting user data
-3. **User Experience:** Intuitive interface with responsive design
-4. **Scalability:** Architecture supports future growth and enhancements
-5. **Code Quality:** Clean, maintainable code following best practices
+2. **Security matters** - Prepared statements aren't optional. CSRF protection is important. Input sanitization everywhere.
 
-### Lessons Learned
+3. **API rate limits are real** - Hit GitHub's rate limits a few times. Adding a token helped.
 
-- Importance of early security planning
-- Value of user feedback in design process
-- Benefits of modular architecture
-- Need for comprehensive testing
-- Significance of documentation
+4. **Database design matters** - Spent time thinking about relationships, indexes, constraints. Worth it.
 
-### Project Impact
+5. **Environment variables are great** - Using `.env` makes deployment so much easier. No more hardcoding secrets.
 
-The system has improved:
-- Time tracking accuracy
-- Administrative efficiency
-- User satisfaction scores
-- Data consistency across repositories
+6. **Testing is important** - Wish I'd written tests, but manual testing found a lot of bugs.
 
-### Final Thoughts
+7. **Documentation is hard** - Writing this README took almost as long as some features.
 
-This capstone project demonstrates the application of software engineering principles, web development best practices, and security considerations in creating a production-ready application. The system serves as a foundation for future enhancements and provides valuable insights into full-stack web development.
+8. **Don't overthink it** - Started with something simple, added features as needed. Better than trying to build everything at once.
+
+Biggest challenge was understanding OAuth flow and GitHub's API. But once I got it, things clicked.
+
+Biggest success was getting the whole thing working end-to-end. Seeing someone else use it and log hours was pretty cool.
 
 ---
 
 ## References
 
-### Academic Sources
+I used these resources a lot:
 
-1. [Add relevant academic papers on web security, database design, etc.]
+1. **PHP Manual** - https://www.php.net/manual/ (especially the PDO section)
 
-### Technical Documentation
+2. **GitHub API Docs** - https://docs.github.com/en/rest (for API endpoints)
 
-1. PHP Documentation. (2024). *PHP Manual*. https://www.php.net/manual/
-2. MySQL Documentation. (2024). *MySQL 8.0 Reference Manual*. https://dev.mysql.com/doc/
-3. GitHub. (2024). *GitHub REST API Documentation*. https://docs.github.com/en/rest
-4. GitHub. (2024). *GitHub OAuth Apps Documentation*. https://docs.github.com/en/apps/oauth-apps
+3. **GitHub OAuth Docs** - https://docs.github.com/en/apps/oauth-apps (for OAuth flow)
 
-### Security Standards
+4. **Stack Overflow** - For specific problems and syntax questions
 
-1. OWASP. (2024). *OWASP Top 10*. https://owasp.org/www-project-top-ten/
-2. RFC 6749. (2012). *The OAuth 2.0 Authorization Framework*. https://tools.ietf.org/html/rfc6749
+5. **OWASP Top 10** - For security best practices
 
-### Design Resources
+6. **Flatpickr Docs** - https://flatpickr.js.org/ (for the date picker)
 
-1. Google Material Design. (2024). *Material Design Guidelines*. https://material.io/design
-2. W3C. (2024). *Web Content Accessibility Guidelines*. https://www.w3.org/WAI/WCAG21/
+7. **MySQL Documentation** - For SQL syntax and constraints
 
----
-
-## Appendices
-
-### Appendix A: Database Schema (Complete)
-
-The complete database schema is available in `database/schema.sql`. Key tables include:
-
-- **users:** User authentication and profile data
-- **applications:** Repository information from GitHub
-- **hours:** Time tracking entries with referential integrity
-
-### Appendix B: API Endpoints
-
-**GitHub REST API v3 Endpoints Used:**
-- `GET /user` - Authenticated user information
-- `GET /orgs/{org}/repos` - Organization repositories
-- `GET /repos/{owner}/{repo}` - Repository details
-- `GET /repos/{owner}/{repo}/languages` - Repository languages
-- `GET /repos/{owner}/{repo}/contributors` - Contributor statistics
-
-**OAuth 2.0 Endpoints:**
-- `GET /login/oauth/authorize` - Authorization request
-- `POST /login/oauth/access_token` - Token exchange
-
-### Appendix C: Configuration Files
-
-Example configuration files are provided:
-- `config/config.example.php` - Template for configuration
-- `config/config.php` - Actual configuration (not in version control)
-
-### Appendix D: User Manual
-
-**For Contributors:**
-
-1. **Logging Hours:**
-   - Navigate to Dashboard
-   - Select repository from dropdown
-   - Choose date using calendar
-   - Enter hours (0.25 - 16.0)
-   - Add optional description
-   - Click "Log Hours"
-
-2. **Viewing History:**
-   - Go to "My History" page
-   - Use filters to narrow results
-   - View statistics and charts
-   - Export data if needed
-
-3. **Browsing Repositories:**
-   - Visit home page
-   - Use search to find repositories
-   - Click "View Details" for more information
-   - See contributor statistics
-
-### Appendix E: Administrator Guide
-
-**For Administrators:**
-
-1. **Accessing Admin Panel:**
-   - Login with admin account
-   - Navigate to Admin Dashboard
-   - Verify admin privileges
-
-2. **Importing Repositories:**
-   - Click "Import from GitHub"
-   - System fetches all organization repos
-   - Review import statistics
-   - Toggle repository visibility
-
-3. **Managing Repositories:**
-   - Search and filter repositories
-   - Enable/disable repositories
-   - View repository statistics
-   - Monitor contributor activity
-
-### Appendix F: Code Samples
-
-**Key Implementation Examples:**
-
-1. **CSRF Token Generation:**
-```php
-function generateCSRFToken() {
-    if (!isset($_SESSION[CSRF_TOKEN_NAME])) {
-        $_SESSION[CSRF_TOKEN_NAME] = bin2hex(random_bytes(32));
-    }
-    return $_SESSION[CSRF_TOKEN_NAME];
-}
-```
-
-2. **Prepared Statement Usage:**
-```php
-$stmt = $db->prepare("INSERT INTO hours (user_id, application_id, work_date, duration, description) VALUES (?, ?, ?, ?, ?)");
-$stmt->execute([$user_id, $app_id, $date, $duration, $description]);
-```
-
-3. **Input Sanitization:**
-```php
-function sanitizeInput($input) {
-    return htmlspecialchars(trim($input), ENT_QUOTES, 'UTF-8');
-}
-```
-
-### Appendix G: Screenshots
-
-[Screenshots would be included here showing:]
-- Login page
-- User dashboard
-- Time entry form
-- Personal history page
-- Admin dashboard
-- Repository management
-- Public repository showcase
-
-### Appendix H: Test Results
-
-**Functional Testing Results:**
-- Authentication: 100% pass rate
-- Time Entry: 100% pass rate
-- Repository Management: 100% pass rate
-- User Dashboard: 100% pass rate
-
-**Security Testing Results:**
-- CSRF Protection: All tests passed
-- SQL Injection: All attempts blocked
-- XSS Prevention: All scripts sanitized
-- Session Security: All validations passed
-
-**Performance Metrics:**
-- Average page load: 1.2 seconds
-- Database query time: 45ms average
-- API response time: 320ms average
+Stack Overflow helped a lot with specific issues. PHP.net manual for PDO syntax. GitHub docs for API endpoints and OAuth flow.
 
 ---
 
 ## License
 
-This project is part of the BrickMMO ecosystem. All rights reserved.
-
-## Contact Information
-
-**Developer:** [Your Name]  
-**Email:** [Your Email]  
-**GitHub:** [Your GitHub Profile]  
-**Project Repository:** [Repository URL]
+This is part of the BrickMMO project. All rights reserved.
 
 ---
 
-**Document Version:** 1.0.0  
-**Last Updated:** [Current Date]  
+## Contact
+
+**Developer:** Jashanpreet Singh Gill  
+**Institution:** Humber College  
+**GitHub:** [your-github-username]
+
+---
+
+**Last Updated:** November 2025  
 **Status:** Capstone Project Submission
+
+Thanks for reading! If you have questions or suggestions, feel free to reach out.

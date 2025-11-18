@@ -1,6 +1,5 @@
 <?php
 
-
 require_once 'config/config.php';
 require_once 'config/database.php';
 
@@ -21,7 +20,6 @@ try {
     if (!$user) {
         redirect(BASE_URL . 'index.php?error=user_not_found');
     }
-    
     
     $stats_stmt = $db->prepare("
         SELECT 
@@ -157,9 +155,6 @@ try {
                 <p class="section-subtitle">Detailed view of contributor information and statistics</p>
                 <p class="section-subtitle">View-only profile. To log time, use your <a href="<?= BASE_URL ?>dashboard.php">Dashboard</a>.</p>
                 
-                
-
-                
                 <div class="stats-grid">
                     <div class="stats-card">
                         <h4 class="text-subtext" style="margin: 0;">Total Hours</h4>
@@ -181,7 +176,6 @@ try {
                     </div>
                 </div>
 
-                
                 <h3 class="subsection-title">Repositories Contributed To</h3>
                 <?php if (!empty($contributed_repos)): ?>
                     <div style="max-width: 100%;">
